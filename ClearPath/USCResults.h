@@ -14,4 +14,6 @@
     int _index, _page;
 }
 
+@property (nonatomic, strong) NSArray *array;
+
 @end

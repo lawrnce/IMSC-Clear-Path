@@ -55,6 +55,6 @@
 
 - (void)enableTouch:(BOOL)flag forMap:(MKMapView *)mapView;
 - (void)searchShowing:(BOOL)flag;
-- (void)showSearchResultsForArray:(NSArray *)array withDicionary:(NSDictionary *)dictionary;
+- (void)showSearchResultsForArray:(NSArray *)array;
 
 @end

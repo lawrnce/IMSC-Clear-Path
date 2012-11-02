@@ -21,7 +21,6 @@
 
 // other properties
 @property (nonatomic, strong) NSMutableDictionary *dictionary;
-@property (nonatomic, strong) NSMutableArray *array;
 
 @end
 
@@ -33,7 +32,6 @@
 @synthesize mapView = _mapView;
 
 @synthesize dictionary = _dictionary;
-@synthesize array = _array;
 
 - (void)viewDidLoad
 {
@@ -92,8 +90,8 @@
     [self.mapView searchShowing:NO];
     
     // geocode result
-    [self performGeocode:self];
-    
+    if (textField.text) [self performGeocode:self withAddress:textField.text];
+
     return NO;
 }
 
@@ -157,11 +155,12 @@
 
 #pragma mark - Geocoding Methods
 
-- (void)performGeocode:(id)sender;
+- (void)performGeocode:(id)sender withAddress:(NSString *)address;
 {
     CLGeocoder *geocoder = [[CLGeocoder alloc] init];
     
-    [geocoder geocodeAddressString:self.mapView.searchBar.text completionHandler:^(NSArray *placemarks, NSError *error) {
+    // geocoder returns an array of placemarks. Each placemark is a string that needs to be parsed
+    [geocoder geocodeAddressString:address completionHandler:^(NSArray *placemarks, NSError *error) {
         NSLog(@"geocodeAddressString:completionHandler: Completion Handler called!");
         if (error)
         {
@@ -171,7 +170,7 @@
         }
         
         NSLog(@"Received placemarks: %@", placemarks);
-        [self createPlacemarkArray:placemarks];
+        [self.mapView showSearchResultsForArray:placemarks];
     }];
 
 }
@@ -207,33 +206,34 @@
     });   
 }
 
+// Function creates an array of buttons that contain placemark information
 - (void)createPlacemarkArray:(NSArray *)placemarks;
 {
     if (!self.dictionary)
         self.dictionary = [[NSMutableDictionary alloc] init];
     
-    if (!self.array)
-        self.array = [[NSMutableArray alloc] init];
+    // fast enumeration that parses each placemark and places it into the array placemarks
+    // SAMPLE PLACEMARK "University of Southern California, Los Angeles, CA  90007, United States @ <+34.02137294,-118.28668562> +/- 100.00m, region (identifier <+34.02208300,-118.28567550> radius 770.71) <+34.02208300,-118.28567550> radius 770.71m"
     
+    // parse the placemark so the address is the key and the coordinate is the object
     for (CLLocation *element in placemarks) {
         
+        // seperate 
         NSArray *firstParse = [[NSArray alloc] initWithArray:[[element description] componentsSeparatedByString:@"@"]];
         NSArray *secondParse = [[NSArray alloc] initWithArray:[[firstParse objectAtIndex:0] componentsSeparatedByString:@","]];
         
         // create dictionary
         [self.dictionary setObject:element forKey:[secondParse objectAtIndex:0]];
         
-        // create button
+        // create button for the array
         UIButton *button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-        [button setTitle:[secondParse objectAtIndex:0] forState:UIControlStateNormal];
+        [button setTitle:[secondParse objectAtIndex:0] forState:UIControlStateNormal]; //set the title of the button to the location 
         [button sizeToFit];
         
-        // add button to array
-        [self.array addObject:button];
     }
     
     // send to mapView
-//    [self.mapView showSearchResultsForArray:self. withDicionary:dictionary];
+    
 }
 
 @end

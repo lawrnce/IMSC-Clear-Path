@@ -7,6 +7,7 @@
 //
 
 #import "USCMapView.h"
+#import "USCResults.h"
 
 #import "CAAnimation+SpecialAnimations.h"
 
@@ -19,6 +20,8 @@ static NSString * const kUSCRubberBandAnimationKey = @"kUSCRubberBandAnimationKe
 static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 
 @interface USCMapView () 
+
+@property (strong, nonatomic) USCResults *resultsView;
 
 @property (nonatomic) CGPoint recentStart;
 @property (nonatomic) CGPoint recentStop;
@@ -78,7 +81,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 {
     [super layoutSubviews];
     
-    // set mapView
+    // set map
     self.mapView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.bounds)*4.5f, CGRectGetMaxY(self.bounds)*3);
     self.mapView.center = self.center;
     
@@ -208,6 +211,14 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
             }
         }
     }
+}
+
+#pragma mark - ResultsView Methods
+
+- (void)showSearchResultsForArray:(NSArray *)array
+{
+    if (!self.resultsView) self.resultsView = [[USCResults alloc] initWithFrame:CGRectZero];
+    self.resultsView.array = array;
 }
 
 #pragma mark - Helper Methods
