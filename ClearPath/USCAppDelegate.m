@@ -8,6 +8,7 @@
 
 #import "USCAppDelegate.h"
 
+
 #import "USCViewController.h"
 
 @implementation USCAppDelegate
@@ -25,6 +26,11 @@
     
     self.window.rootViewController = self.viewController;
     [self.window makeKeyAndVisible];
+    
+    // Restkit
+    [RKClient clientWithBaseURLString:@"http://128.125.163.86/TDSP_Servlet/TDSPQuerySuper3"];
+    NSLog(@"I am your RKClient singleton : %@", [RKClient sharedClient]);
+
     return YES;
 }
 

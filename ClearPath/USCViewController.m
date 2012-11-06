@@ -7,11 +7,13 @@
 //
 
 #import "USCViewController.h"
+
+#import <RestKit/RestKit.h>
 #import "USCMapView.h"
 
 #define kSCALE 1
 
-@interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate>
+@interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, RKRequestDelegate>
 
 @property (nonatomic, strong) CLLocationManager *locationManager;
 @property (nonatomic, strong) CLRegion *currentRegion;
@@ -234,6 +236,43 @@
     
     // send to mapView
     
+}
+
+#pragma mark - Rest Kit Delegate
+
+- (void)navigateFrom:(CLLocation *)start to:(CLLocation *)end forTimeIndex:(NSString *)index forDay:(NSString *)day;
+{
+    
+    // Set parameters into dictionary
+    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
+                            [NSString stringWithFormat:@"%f,%f",start.coordinate.latitude,start.coordinate.longitude],@"start",
+                            [NSString stringWithFormat:@"%f,%f",end.coordinate.latitude,end.coordinate.longitude],@"end",
+                            index, @"time",
+                            @"False", @"update",
+                            day, @"day",
+                            nil];
+    // start restkit
+    [self sendRequests:params];
+}
+
+- (void)sendRequests:(NSDictionary *)params;
+{
+    [[RKClient sharedClient] get:@"?" queryParameters:params delegate:self];
+}
+
+- (void)request:(RKRequest*)request didLoadResponse:(RKResponse*)response {
+    
+    if ([response isOK]) {
+        // Success! Let's take a look at the data
+        NSLog(@"Retrieved XML: %@", [response bodyAsString]);
+        
+//        // Parse route and send to mapview and set delegate
+//        [self.mapView.mapView displayRouteForCoordinates:[self.parser parseRouteFrom:[response bodyAsString]]];
+//        self.mapView.delegate = self;
+//        
+//        // Update button display
+//        [self.mapView.buttonDisplay updateTravelTimeDisplayText:[self.parser parseTravelTime]];
+    }
 }
 
 @end
