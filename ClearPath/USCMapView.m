@@ -26,6 +26,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @property (nonatomic) CGPoint recentStart;
 @property (nonatomic) CGPoint recentStop;
 
+@property (nonatomic, strong) MKPolyline *polyline;
 @property (nonatomic, strong) NSArray *results;
 
 @end
@@ -35,6 +36,10 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @synthesize delegate = _delegate;
 
 @synthesize mapView = _mapView;
+@synthesize polylineView = _polylineView;
+
+@synthesize polyline = _polyline;
+
 @synthesize panGestureRecognizer = _panGestureRecognizer;
 @synthesize recentStart = _recentPosition;
 @synthesize recentStop = _recentStop;
@@ -109,6 +114,28 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     _limitedPanMapFlags.panning = NO;
     _limitedPanMapFlags.showingSearch = YES;
 
+}
+
+#pragma mark - Map Display Methods
+
+- (void)displayRouteForCoordinates:(NSArray *)array;
+{
+    [self.mapView removeOverlay:self.polyline];
+    
+    CLLocationCoordinate2D *coordinates = malloc([array count] * sizeof(CLLocationCoordinate2D));
+    CLLocationCoordinate2D *coordsIter = coordinates;
+    for (CLLocation *location in array)
+    {
+        *coordsIter = location.coordinate;
+        coordsIter++;
+    }
+    
+    self.polyline = [MKPolyline polylineWithCoordinates:coordinates count:[array count]];
+    free(coordinates);
+    
+    [self.mapView addOverlay:self.polyline];
+    [self addSubview:self.mapView];
+    NSLog(@"polyline made");
 }
 
 #pragma mark - Gesture Handling

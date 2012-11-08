@@ -21,7 +21,7 @@
 
 @synthesize titleShadow = _titleShadow;
 
-- (id)initWithFrame:(CGRect)frame
+- (id)initWithFrame:(CGRect)frame;
 {
     self = [super initWithFrame:frame];
     if (self) {
@@ -45,6 +45,7 @@
         self.tableView = [[UITableView alloc] initWithFrame:CGRectZero];
         self.tableView.backgroundColor = [UIColor clearColor];
         [self addSubview:self.tableView];
+        
     }
     return self;
 }

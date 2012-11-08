@@ -10,8 +10,11 @@
 
 #import <RestKit/RestKit.h>
 #import "USCMapView.h"
+#import "NSDate+RoudingCurrentTime.h"
 
 #define kSCALE 1
+#define kLAT 34.025454
+#define kLONG -118.291554
 
 @interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, RKRequestDelegate>
 
@@ -23,6 +26,7 @@
 
 // other properties
 @property (nonatomic, strong) NSMutableDictionary *dictionary;
+@property (nonatomic, strong) NSDictionary *timeIndex;
 
 @end
 
@@ -34,6 +38,7 @@
 @synthesize mapView = _mapView;
 
 @synthesize dictionary = _dictionary;
+@synthesize timeIndex = _timeIndex;
 
 - (void)viewDidLoad
 {
@@ -238,6 +243,31 @@
     
 }
 
+#pragma mark - Time Methods
+
+- (NSString *)receiveRoundedTime;
+{
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"TimeIndex" ofType:@"plist"];
+    self.timeIndex = [[NSDictionary alloc] initWithContentsOfFile:path];
+    
+    NSDate *date = [[NSDate alloc] init];
+    NSString *roundedTime = [date setRoundTimeToString:[date currentTimeRoundedToNearestTimeInterval:15*60]];
+    
+    return [self.timeIndex valueForKey:roundedTime];
+}
+
+- (NSString *)receiveDayOfWeek;
+{
+    NSDate *date = [[NSDate alloc] init];
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    
+    [dateFormatter setDateFormat:@"EEEE"];
+    NSString *dayOfWeek = [dateFormatter stringFromDate:date];
+    
+    return dayOfWeek;
+}
+
+
 #pragma mark - Rest Kit Delegate
 
 - (void)navigateFrom:(CLLocation *)start to:(CLLocation *)end forTimeIndex:(NSString *)index forDay:(NSString *)day;
@@ -245,11 +275,11 @@
     
     // Set parameters into dictionary
     NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
-                            [NSString stringWithFormat:@"%f,%f",start.coordinate.latitude,start.coordinate.longitude],@"start",
+                            [NSString stringWithFormat:@"%f,%f",kLAT,kLONG],@"start",
                             [NSString stringWithFormat:@"%f,%f",end.coordinate.latitude,end.coordinate.longitude],@"end",
                             index, @"time",
                             @"False", @"update",
-                            day, @"day",
+                            [self receiveDayOfWeek], @"day",
                             nil];
     // start restkit
     [self sendRequests:params];

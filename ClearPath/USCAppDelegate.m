@@ -28,7 +28,7 @@
     [self.window makeKeyAndVisible];
     
     // Restkit
-    [RKClient clientWithBaseURLString:@"http://128.125.163.86/TDSP_Servlet/TDSPQuerySuper3"];
+    [RKClient clientWithBaseURLString:@"http://128.125.163.86/TDSP_Servlet/TDSPQuerySuper6"];
     NSLog(@"I am your RKClient singleton : %@", [RKClient sharedClient]);
 
     return YES;

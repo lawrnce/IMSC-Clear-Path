@@ -7,8 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <MapKit/MapKit.h>
 
+#import <MapKit/MapKit.h>
 #import "USCRecents.h"
 
 #define METERS_PER_MILE 1609.344
@@ -48,6 +48,7 @@
 @property (nonatomic, unsafe_unretained) id<USCLimitedPanMapViewDelegate> delegate;
 
 @property (nonatomic, strong) MKMapView *mapView;
+@property (nonatomic, strong) MKPolylineView *polylineView;
 @property (nonatomic, strong) UIPanGestureRecognizer *panGestureRecognizer;
 @property (nonatomic, strong, readonly) UILongPressGestureRecognizer *touchDownGestureRecognizer;
 @property (nonatomic, strong) USCRecents *recentView;
