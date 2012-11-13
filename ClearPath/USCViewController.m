@@ -18,6 +18,7 @@
 
 @interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, RKRequestDelegate>
 
+// variable properties
 @property (nonatomic, strong) CLLocationManager *locationManager;
 @property (nonatomic, strong) CLRegion *currentRegion;
 
@@ -169,12 +170,20 @@
     // geocoder returns an array of placemarks. Each placemark is a string that needs to be parsed
     [geocoder geocodeAddressString:address completionHandler:^(NSArray *placemarks, NSError *error) {
         NSLog(@"geocodeAddressString:completionHandler: Completion Handler called!");
+      
         if (error)
         {
             NSLog(@"Geocode failed with error: %@", error);
             [self displayError:error];
             return;
         }
+        
+//        if ([placemarks count] > 0) {
+//            CLPlacemark *placemark = [placemarks objectAtIndex:0];
+//            CLLocation *location = placemark.location;
+//            
+//            self.endLoctation = location;
+//        }
         
         NSLog(@"Received placemarks: %@", placemarks);
         [self.mapView showSearchResultsForArray:placemarks];

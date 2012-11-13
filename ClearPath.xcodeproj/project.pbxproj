@@ -24,6 +24,7 @@
 		9671656415FA7A8100C4015F /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9671656315FA7A8100C4015F /* CoreLocation.framework */; };
 		9671656B15FAAF3E00C4015F /* CAAnimation+SpecialAnimations.m in Sources */ = {isa = PBXBuildFile; fileRef = 9671656A15FAAF3E00C4015F /* CAAnimation+SpecialAnimations.m */; };
 		9671656E15FAAFDA00C4015F /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9671656D15FAAFDA00C4015F /* QuartzCore.framework */; };
+		967B977E1652FBE100FBF602 /* USCLocationPoint.m in Sources */ = {isa = PBXBuildFile; fileRef = 967B977D1652FBE100FBF602 /* USCLocationPoint.m */; };
 		96DC5D1F16434FE000EF9B4C /* libRestKit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96DC5D1316434E8500EF9B4C /* libRestKit.a */; };
 		96DC5D261643501F00EF9B4C /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96DC5D211643501F00EF9B4C /* CFNetwork.framework */; };
 		96DC5D271643501F00EF9B4C /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96DC5D221643501F00EF9B4C /* CoreData.framework */; };
@@ -108,6 +109,8 @@
 		9671656915FAAF3E00C4015F /* CAAnimation+SpecialAnimations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CAAnimation+SpecialAnimations.h"; sourceTree = "<group>"; };
 		9671656A15FAAF3E00C4015F /* CAAnimation+SpecialAnimations.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "CAAnimation+SpecialAnimations.m"; sourceTree = "<group>"; };
 		9671656D15FAAFDA00C4015F /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		967B977C1652FBE100FBF602 /* USCLocationPoint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = USCLocationPoint.h; sourceTree = "<group>"; };
+		967B977D1652FBE100FBF602 /* USCLocationPoint.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = USCLocationPoint.m; sourceTree = "<group>"; };
 		96DC5D0716434E8500EF9B4C /* RestKit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RestKit.xcodeproj; path = RestKit/RestKit.xcodeproj; sourceTree = "<group>"; };
 		96DC5D211643501F00EF9B4C /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		96DC5D221643501F00EF9B4C /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
@@ -208,6 +211,8 @@
 				9671654315FA76A900C4015F /* USCViewController.h */,
 				9671654415FA76A900C4015F /* USCViewController.m */,
 				963881D71612377500641CDD /* MapView */,
+				967B977C1652FBE100FBF602 /* USCLocationPoint.h */,
+				967B977D1652FBE100FBF602 /* USCLocationPoint.m */,
 				964DC0A0164B581E00472402 /* USCParse.h */,
 				964DC0A1164B581E00472402 /* USCParse.m */,
 				9671656C15FAAF6600C4015F /* Catagories */,
@@ -369,6 +374,7 @@
 				963881D51612370F00641CDD /* USCRecents.m in Sources */,
 				9631E675162776FB00E4F0F9 /* USCResults.m in Sources */,
 				964DC0A2164B581E00472402 /* USCParse.m in Sources */,
+				967B977E1652FBE100FBF602 /* USCLocationPoint.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
