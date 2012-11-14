@@ -21,7 +21,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 
 @interface USCMapView () 
 
-@property (strong, nonatomic) USCResults *resultsView;
+
 
 @property (nonatomic) CGPoint recentStart;
 @property (nonatomic) CGPoint recentStop;
@@ -244,8 +244,9 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 
 - (void)showSearchResultsForArray:(NSArray *)array
 {
+    // init resultsView and set points
     if (!self.resultsView) self.resultsView = [[USCResults alloc] initWithFrame:CGRectZero];
-    self.resultsView.array = array;
+    [self.resultsView setLocationPoints:array];
 }
 
 #pragma mark - Helper Methods

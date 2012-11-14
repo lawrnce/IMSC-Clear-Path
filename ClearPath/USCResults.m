@@ -57,26 +57,27 @@
 
 #pragma mark - Display Methods
 
-//- (void)setInformationForPage:(int)page;
-//{
-//    // find starting index for given page
-//    int i;
-//    NSArray *array;
-//    
-//    // find the starting index according to the page given
-//    // (1,0) (2,3) (3,6) (4,9) (5,12) -> relation is *3 -3
-//    i = page * 3.0 - 3.0;
-//    
-//    // set information for the buttons in the page
-//    // SAMPLE PLACEMARK "University of Southern California, Los Angeles, CA  90007, United States @ <+34.02137294,-118.28668562> +/- 100.00m, region (identifier <+34.02208300,-118.28567550> radius 770.71) <+34.02208300,-118.28567550> radius 770.71m"
-//    for (int j = 0; j < 3; j++) {
-//        NSArray *firstParse = [[NSArray alloc] initWithArray:[[self.array objectAtIndex:i] componentsSeparatedByString:@"@"]];
-//        NSArray *secondParse = [[NSArray alloc] initWithArray:[[firstParse objectAtIndex:0] componentsSeparatedByString:@","]];
-//        
-//        i++;
-//    }
-//    
-//}
+- (void)setInformationForPage:(int)page;
+{
+    // find starting index for given page
+    int i;
+    NSArray *array;
+    
+    // find the starting index according to the page given
+    // (1,0) (2,3) (3,6) (4,9) (5,12) -> relation is *3 -3
+    i = page * 3.0 - 3.0;
+    
+    // set information for the buttons in the page
+    // SAMPLE PLACEMARK "University of Southern California, Los Angeles, CA  90007, United States @ <+34.02137294,-118.28668562> +/- 100.00m, region (identifier <+34.02208300,-118.28567550> radius 770.71) <+34.02208300,-118.28567550> radius 770.71m"
+    for (int j = 0; j < 3; j++)
+    {
+        NSArray *firstParse = [[NSArray alloc] initWithArray:[[self.array objectAtIndex:i] componentsSeparatedByString:@"@"]];
+        NSArray *secondParse = [[NSArray alloc] initWithArray:[[firstParse objectAtIndex:0] componentsSeparatedByString:@","]];
+        
+        i++;
+    }
+    
+}
 
 - (void)setInitialButtonPosition;
 {
@@ -119,7 +120,17 @@
     _index = [array count];
 }
 
+#pragma mark - Delegate Passing
+
+- (void)setLocationPoints:(NSArray *)placemarks;
+{
+    // check delegate
+    if([self.delegate respondsToSelector:@selector(createLocationPointsForPlacemarks:)])
+       [self.delegate createLocationPointsForPlacemarks:placemarks];
+}
+
 #pragma mark - Getters and Setters
+
 
 
 @end

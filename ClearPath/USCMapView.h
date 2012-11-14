@@ -10,6 +10,7 @@
 
 #import <MapKit/MapKit.h>
 #import "USCRecents.h"
+#import "USCResults.h"
 
 #define METERS_PER_MILE 1609.344
 
@@ -52,6 +53,7 @@
 @property (nonatomic, strong) UIPanGestureRecognizer *panGestureRecognizer;
 @property (nonatomic, strong, readonly) UILongPressGestureRecognizer *touchDownGestureRecognizer;
 @property (nonatomic, strong) USCRecents *recentView;
+@property (nonatomic, strong) USCResults *resultsView;
 @property (nonatomic, strong) UITextField *searchBar;
 
 - (void)enableTouch:(BOOL)flag forMap:(MKMapView *)mapView;

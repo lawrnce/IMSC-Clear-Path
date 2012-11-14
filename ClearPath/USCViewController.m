@@ -10,13 +10,15 @@
 
 #import <RestKit/RestKit.h>
 #import "USCMapView.h"
+#import "USCResults.h"
 #import "NSDate+RoudingCurrentTime.h"
+#import "USCLocationPoint.h"
 
 #define kSCALE 1
 #define kLAT 34.025454
 #define kLONG -118.291554
 
-@interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, RKRequestDelegate>
+@interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, RKRequestDelegate, USCResultsDelegate>
 
 // variable properties
 @property (nonatomic, strong) CLLocationManager *locationManager;
@@ -276,10 +278,21 @@
     return dayOfWeek;
 }
 
+#pragma mark - Results Delegate
+
+- (void)createLocationPointsForPlacemarks:(NSArray *)placemarks;
+{
+    for (CLLocation *element in placemarks)
+    {
+        // call rest kit
+        [self navigateTo:element forTimeIndex:[self receiveRoundedTime] forDay:[self receiveDayOfWeek]];
+    }
+    // call display method here.. might not work if restkit goes on another thread.
+}
 
 #pragma mark - Rest Kit Delegate
 
-- (void)navigateFrom:(CLLocation *)start to:(CLLocation *)end forTimeIndex:(NSString *)index forDay:(NSString *)day;
+- (void)navigateTo:(CLLocation *)end forTimeIndex:(NSString *)index forDay:(NSString *)day;
 {
     
     // Set parameters into dictionary
@@ -301,16 +314,16 @@
 
 - (void)request:(RKRequest*)request didLoadResponse:(RKResponse*)response {
     
-    if ([response isOK]) {
+    if ([response isOK])
+    {
         // Success! Let's take a look at the data
         NSLog(@"Retrieved XML: %@", [response bodyAsString]);
-        
-//        // Parse route and send to mapview and set delegate
-//        [self.mapView.mapView displayRouteForCoordinates:[self.parser parseRouteFrom:[response bodyAsString]]];
-//        self.mapView.delegate = self;
-//        
-//        // Update button display
-//        [self.mapView.buttonDisplay updateTravelTimeDisplayText:[self.parser parseTravelTime]];
+
+        // create location point
+        USCLocationPoint *locationPoint = [[USCLocationPoint alloc] init];
+        [locationPoint setAttributesFromString:[response bodyAsString]];
+        // set into mutable array for results
+        [self.mapView.resultsView.results addObject:locationPoint];
     }
 }
 
