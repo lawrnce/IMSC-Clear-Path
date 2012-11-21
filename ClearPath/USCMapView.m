@@ -10,6 +10,7 @@
 #import "USCResults.h"
 
 #import "CAAnimation+SpecialAnimations.h"
+#import "USCResultCard.h"
 
 #define METERS_PER_MILE 1609.344
 #define kRECENTS_THRESHOLD 100
@@ -19,9 +20,7 @@
 static NSString * const kUSCRubberBandAnimationKey = @"kUSCRubberBandAnimationKey";
 static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 
-@interface USCMapView () 
-
-
+@interface USCMapView () <USCResultCardDelegate, MKMapViewDelegate>
 
 @property (nonatomic) CGPoint recentStart;
 @property (nonatomic) CGPoint recentStop;
@@ -41,7 +40,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @synthesize polyline = _polyline;
 
 @synthesize panGestureRecognizer = _panGestureRecognizer;
-@synthesize recentStart = _recentPosition;
+@synthesize recentStart = _recentStart;
 @synthesize recentStop = _recentStop;
 @synthesize recentView = _recentView;
 @synthesize searchBar = _searchBar;
@@ -56,16 +55,14 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         // set background color
         self.backgroundColor = [UIColor clearColor];
         
-        // panGestureRecognizer
-        self.panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handeGesture:)];
-        self.panGestureRecognizer.delegate = self;
-        [self addGestureRecognizer:self.panGestureRecognizer];
-        
         // mapView
         self.mapView = [[MKMapView alloc] initWithFrame:CGRectZero];
         [self addSubview:self.mapView];                                 // add mapView to underlay view
+        self.mapView.delegate = self;
+        
         self.mapView.showsUserLocation = YES;
-        [self enableTouch:NO forMap:self.mapView];                      //disable all touch events
+        self.mapView.userInteractionEnabled = YES;
+        [self enableFullTouch:NO forMap:self.mapView];                      //disable all touch events
 
         // searchBar
         self.searchBar = [[UITextField alloc] initWithFrame:CGRectZero];
@@ -138,6 +135,105 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     NSLog(@"polyline made");
 }
 
+#pragma mark - ResultsView Methods
+
+- (void)showSearchResultsForPoints:(NSArray *)placemarks;
+{
+    // init an array to add resultCards too
+    NSMutableArray *resultCards = [[NSMutableArray alloc] init];
+    
+    // create resultCards for each placemark
+    for (USCLocationPoint *element in placemarks)
+    {
+        // init a resultCard with location point
+        USCResultCard *resultCard = [[USCResultCard alloc] initWithFrame:CGRectZero withPoint:element delegate:self];
+        // add to array
+        [resultCards addObject:resultCard];
+    }
+    
+    NSLog(@"MOOOOO %@", [[[resultCards objectAtIndex:0] locationPoint] name]);
+    
+    // init resultsView and set points
+    self.resultsView = [[USCResults alloc] initWithFrame:CGRectZero andWithResults:resultCards];
+    
+    // set result view properties
+    self.resultsView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.bounds), CGRectGetMaxY(self.bounds)*0.8f);
+    self.resultsView.center = CGPointMake(self.center.x, self.center.y);
+    
+    // add to view
+    [self addSubview:self.resultsView];
+}
+
+#pragma mark - Result Card Delegate Methods
+
+- (void)cardDidPressFor:(USCLocationPoint *)location;
+{
+    // check if a polyline exists, if so then remove
+    if (self.polyline)[self.mapView removeOverlay:self.polyline];
+    
+    [self createPolylineForCoordinates:location.coordinates];
+    
+    [self enableFullTouch:YES forMap:self.mapView];
+    
+    NSLog(@"YESSSSSSSSS!!! %@", location.name);
+}
+
+#pragma mark - MapKit Delegate Methods
+
+- (MKOverlayView *)mapView:(MKMapView *)mapView viewForOverlay:(id<MKOverlay>)overlay;
+{
+    if ([overlay isKindOfClass:[MKPolyline class]])
+    {
+        self.polylineView = [[MKPolylineView alloc] initWithPolyline:(MKPolyline *)overlay];
+        self.polylineView.fillColor = [UIColor blackColor];
+        self.polylineView.strokeColor = [UIColor purpleColor];
+        self.polylineView.lineWidth = 8;
+        return self.polylineView;
+    }
+    
+    return nil;
+}
+
+//- (MKAnnotationView *)mapView:(MKMapView *)mapView viewForAnnotation:(id<MKAnnotation>)annotation;
+//{
+//    if ([annotation isKindOfClass:[MKUserLocation class]]) {
+//        return nil;
+//    }
+//    
+//    MKPinAnnotationView *annotationView = [[MKPinAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:@"current location"];
+//    
+//    annotationView.animatesDrop = YES;
+//    annotationView.pinColor = MKPinAnnotationColorPurple;
+//    
+//    return annotationView;
+//}
+
+#pragma mark - PolyLine and Annotation Methods
+
+- (void)createPolylineForCoordinates:(NSArray *)coordinates;
+{
+    CLLocationCoordinate2D *coords = malloc([coordinates count] * sizeof(CLLocationCoordinate2D));
+    CLLocationCoordinate2D *coordsIter = coords;
+    
+    for (CLLocation *location in coordinates)
+    {
+        *coordsIter = location.coordinate;
+        coordsIter++;
+    }
+    
+    self.polyline = [MKPolyline polylineWithCoordinates:coords count:[coordinates count]];
+    free(coords);
+    
+    [self.mapView addOverlay:self.polyline];
+    [self addSubview:self.mapView];
+    NSLog(@"Polyline Made");
+}
+
+- (void)createAnnotationsForCoordinates:(NSArray *)coordinates;
+{
+    
+}
+
 #pragma mark - Gesture Handling
 
 - (void)handeGesture:(UIPanGestureRecognizer *)gesture;
@@ -184,13 +280,13 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         if (_limitedPanMapFlags.neutral &&((_startPosition.x - currentPosition.x) >= kRECENTS_THRESHOLD)) {
             
             _recentPosition = CGPointMake(_startPosition.x - kRECENTS_TRANSITION, _startPosition.y);
-        
+            
             // mapAnimation
             CAAnimation *mapAnimation = [CAAnimation rubberBandAnimationFromPosition:currentPosition toPosition:_recentPosition duration:0.7f];
             
             // recentAnimation
             [UIView animateWithDuration:0.3f animations:^{
-             
+                
                 self.recentView.center = self.recentStop;
                 self.mapView.alpha = .7f;
                 self.recentView.alpha = 1.0f;
@@ -198,17 +294,17 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
                 
                 _limitedPanMapFlags.showingRecents = YES;
                 _limitedPanMapFlags.showingSearch = YES;
-             
+                
             }];
             
             // Apply the mapAnimation
             [self.mapView.layer addAnimation:mapAnimation forKey:kUSCRubberBandAnimationKey];
-            [self enableTouch:NO forMap:self.mapView];
+            [self enableFullTouch:NO forMap:self.mapView];
             
             self.mapView.center = _recentPosition;
-        
+            
         } else {
-
+            
             // mapAnimation
             CAAnimation *mapAnimation = [CAAnimation rubberBandAnimationFromPosition:currentPosition toPosition:_startPosition duration:0.7f];
             
@@ -217,7 +313,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
             
             // Apply the rubber band animation
             [self.mapView.layer addAnimation:mapAnimation forKey:kUSCRubberBandAnimationKey];
-            [self enableTouch:NO forMap:self.mapView];
+            [self enableFullTouch:NO forMap:self.mapView];
             
             self.mapView.center = self.center;
             
@@ -240,19 +336,27 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     }
 }
 
-#pragma mark - ResultsView Methods
-
-- (void)showSearchResultsForArray:(NSArray *)array
-{
-    // init resultsView and set points
-    if (!self.resultsView) self.resultsView = [[USCResults alloc] initWithFrame:CGRectZero];
-    [self.resultsView setLocationPoints:array];
-}
-
 #pragma mark - Helper Methods
 
-- (void)enableTouch:(BOOL)flag forMap:(MKMapView *)mapView;
+- (void)enableFullTouch:(BOOL)flag forMap:(MKMapView *)mapView;
 {
+    // toggle pan gesture recognizer 
+    if (flag)
+    {
+        // Full touch enabled so must remove gesture recognizer
+        if (self.panGestureRecognizer) [self removeGestureRecognizer:self.panGestureRecognizer];
+    }
+    else
+    {
+        // panGestureRecognizer
+        if (!self.panGestureRecognizer)
+        {
+            self.panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handeGesture:)];
+            self.panGestureRecognizer.delegate = self;
+        }
+        [self addGestureRecognizer:self.panGestureRecognizer];
+    }
+    
     mapView.scrollEnabled = flag;             // disable scroll
     mapView.zoomEnabled = flag;               // disable zoom
     mapView.multipleTouchEnabled = flag;      // disable multitouch

@@ -8,6 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import <RestKit/RestKit.h>
+#import <YelpKit/YelpKit.h>
+#import <GHKit/GHKit.h>
 
 @class USCViewController;
 

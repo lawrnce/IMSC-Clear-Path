@@ -11,13 +11,16 @@
 
 @implementation USCLocationPoint
 
-@synthesize coordinateArray = coordinateArray;
+@synthesize coordinates = coordinates;
 @synthesize name = _name;
+@synthesize address = _address;
 @synthesize travelTime = _travelTime;
 @synthesize travelTimeNumber = _travelTimeNumber;
 
 -(void)setAttributesFromString:(NSString *)rawString;
 {
+    if (!rawString) return;
+    
     // create mutable copy. This returns an array with order [raw lat], [raw long], ... ,[time string], [time number]
     NSMutableArray *mutableCopy = [[USCParse parseRouteFrom:rawString] mutableCopy];
     
@@ -34,7 +37,7 @@
     [mutableCopy removeLastObject];
     
     // set the array
-    self.coordinateArray = mutableCopy;
+    self.coordinates = mutableCopy;
     
 }
 

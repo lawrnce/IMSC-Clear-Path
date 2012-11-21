@@ -1,18 +1,18 @@
 //
-//  NSDate+RoudingCurrentTime.m
-//  ClearPathDemo
+//  NSDate+RoundTime.m
+//  ClearPath
 //
-//  Created by Lawrence Tran on 6/15/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Created by Lawrence Tran on 11/14/12.
+//  Copyright (c) 2012 Lawrence Tran. All rights reserved.
 //
 
-#import "NSDate+RoudingCurrentTime.h"
+#import "NSDate+RoundTime.h"
 
-@implementation NSDate (RoudingCurrentTime)
+@implementation NSDate (RoundTime)
 
 - (NSDate *)currentTimeRoundedToNearestTimeInterval:(NSTimeInterval)interval;
 {
-    // Gets the date rounded date depending on the interval passed 
+    // Gets the date rounded date depending on the interval passed
     NSTimeInterval timeSince1970 = [self timeIntervalSince1970];
     NSTimeInterval roundedTime = round(timeSince1970 / interval) * interval;
     
@@ -31,11 +31,11 @@
 - (NSString *)setRoundTimeToString:(NSDate *)date;
 {
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-       
+    
     // Format time
     [dateFormatter setDateFormat:@"HH:mm"];
     NSString *roundedTime = [dateFormatter stringFromDate:date];
-
+    
     return roundedTime;
 }
 

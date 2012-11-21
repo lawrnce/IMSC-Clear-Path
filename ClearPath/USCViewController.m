@@ -10,15 +10,14 @@
 
 #import <RestKit/RestKit.h>
 #import "USCMapView.h"
-#import "USCResults.h"
-#import "NSDate+RoudingCurrentTime.h"
+#import "NSDate+RoundTime.h"
 #import "USCLocationPoint.h"
 
 #define kSCALE 1
 #define kLAT 34.025454
 #define kLONG -118.291554
 
-@interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, RKRequestDelegate, USCResultsDelegate>
+@interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, RKRequestDelegate>
 
 // variable properties
 @property (nonatomic, strong) CLLocationManager *locationManager;
@@ -30,6 +29,9 @@
 // other properties
 @property (nonatomic, strong) NSMutableDictionary *dictionary;
 @property (nonatomic, strong) NSDictionary *timeIndex;
+@property (nonatomic, strong) NSMutableArray *nameAdressPassing;
+
+@property (nonatomic, strong) NSMutableArray *locationPoints;
 
 @end
 
@@ -43,6 +45,10 @@
 @synthesize dictionary = _dictionary;
 @synthesize timeIndex = _timeIndex;
 
+@synthesize nameAdressPassing = _nameAdressPassing;
+
+@synthesize locationPoints = _locationPoints;
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -54,6 +60,8 @@
     self.mapView = [[USCMapView alloc]initWithFrame:CGRectZero]; // init
 
     [self.view addSubview:self.mapView]; // add into subview
+    
+    self.locationPoints = [[NSMutableArray alloc] init];
     
 }
 
@@ -105,6 +113,163 @@
     return NO;
 }
 
+#pragma mark - Geocoding Methods
+
+- (void)performGeocode:(id)sender withAddress:(NSString *)address;
+{
+    // remove everything in locations points array
+    [self.locationPoints removeAllObjects];
+    
+    CLGeocoder *geocoder = [[CLGeocoder alloc] init];
+    
+    // geocoder returns an array of placemarks. Each placemark is a string that needs to be parsed
+    [geocoder geocodeAddressString:address completionHandler:^(NSArray *placemarks, NSError *error) {
+        NSLog(@"geocodeAddressString:completionHandler: Completion Handler called!");
+      
+        if (error)
+        {
+            NSLog(@"Geocode failed with error: %@", error);
+            [self displayError:error];
+            return;
+        }
+        
+        NSLog(@"Received placemarks: %@", placemarks);
+        [self createLocationPointsForPlacemarks:placemarks];
+        _reference = [placemarks count];
+        _count = 0;
+    }];
+
+}
+
+// display a given NSError in an UIAlertView
+- (void)displayError:(NSError*)error
+{
+    dispatch_async(dispatch_get_main_queue(),^ {
+        
+        NSString *message;
+        switch ([error code])
+        {
+            case kCLErrorGeocodeFoundNoResult:
+                message = @"kCLErrorGeocodeFoundNoResult";
+                break;
+            case kCLErrorGeocodeCanceled:
+                message = @"kCLErrorGeocodeCanceled";
+                break;
+            case kCLErrorGeocodeFoundPartialResult:
+                message = @"kCLErrorGeocodeFoundNoResult";
+                break;
+            default:
+                message = [error description];
+                break;
+        }
+        
+        UIAlertView *alert =  [[UIAlertView alloc] initWithTitle:@"An error occurred."
+                                                          message:message
+                                                         delegate:nil
+                                                cancelButtonTitle:@"OK"
+                                                otherButtonTitles:nil];
+        [alert show];
+    });   
+}
+
+- (void)createLocationPointsForPlacemarks:(NSArray *)placemarks;
+{
+    for (CLPlacemark *element in placemarks)
+    {
+        // parse Cllocation for name and address
+        // SAMPLE PLACEMARK "University of Southern California, Los Angeles, CA  90007, United States @ <+34.02137294,-118.28668562> +/- 100.00m, region (identifier <+34.02208300,-118.28567550> radius 770.71) <+34.02208300,-118.28567550> radius 770.71m"
+        
+        // create location point
+        USCLocationPoint *locationPoint = [[USCLocationPoint alloc] init];
+        locationPoint.name = element.name;
+        
+        // set into mutable array for results
+        [self.locationPoints addObject:locationPoint];
+        
+        NSArray *first = [[element description] componentsSeparatedByString:@"@"];
+        NSArray *second = [[first objectAtIndex:0] componentsSeparatedByString:@","];
+        
+        // set name
+        locationPoint.name = [second objectAtIndex:0];
+        
+        // set address
+        NSArray *address = [second subarrayWithRange:NSMakeRange(1, [second count] - 1)]; // cuts away last item
+        locationPoint.address = [[address valueForKey:@"description"] componentsJoinedByString:@""];
+        
+        NSLog(@"%@, %@", [[self.locationPoints objectAtIndex:0] name], [[self.locationPoints objectAtIndex:0] address]);
+        
+        // call rest kit
+        [self navigateTo:element.location forTimeIndex:[self receiveRoundedTime] forDay:[self receiveDayOfWeek]];
+    }
+}
+
+#pragma mark - Rest Kit Delegate
+
+- (void)navigateTo:(CLLocation *)end forTimeIndex:(NSString *)index forDay:(NSString *)day;
+{
+    
+    // "34.025454,-118.291554"  Set parameters into dictionary
+    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
+                            [NSString stringWithFormat:@"%f,%f", self.mapView.mapView.userLocation.coordinate.latitude, self.mapView.mapView.userLocation.coordinate.longitude],@"start",
+                            [NSString stringWithFormat:@"%f,%f",end.coordinate.latitude,end.coordinate.longitude],@"end",
+                            index, @"time",
+                            @"False", @"update",
+                            day, @"day",
+                            nil];
+    // start restkit
+    [self sendRequests:params];
+}
+
+- (void)sendRequests:(NSDictionary *)params;
+{
+    [[RKClient sharedClient] get:@"?" queryParameters:params delegate:self];
+}
+
+- (void)request:(RKRequest*)request didLoadResponse:(RKResponse*)response
+{    
+    
+    if ([response isOK])
+    {
+        // Success! Let's take a look at the data
+        NSLog(@"Retrieved XML: %@", [response bodyAsString]);
+
+        [[self.locationPoints objectAtIndex:_count] setAttributesFromString:[response bodyAsString]];
+        
+        _count++;
+        
+        if(_count == _reference)
+        {
+            NSLog(@"SENT: %@", [[self.locationPoints objectAtIndex:0] name]);
+            [self.mapView showSearchResultsForPoints:self.locationPoints];
+        }
+            
+    }
+}
+
+#pragma mark - Time Methods
+
+- (NSString *)receiveRoundedTime;
+{
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"TimeIndex" ofType:@"plist"];
+    self.timeIndex = [[NSDictionary alloc] initWithContentsOfFile:path];
+    
+    NSDate *date = [[NSDate alloc] init];
+    NSString *roundedTime = [date setRoundTimeToString:[date currentTimeRoundedToNearestTimeInterval:15*60]];
+    
+    return [self.timeIndex valueForKey:roundedTime];
+}
+
+- (NSString *)receiveDayOfWeek;
+{
+    NSDate *date = [[NSDate alloc] init];
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    
+    [dateFormatter setDateFormat:@"EEEE"];
+    NSString *dayOfWeek = [dateFormatter stringFromDate:date];
+    
+    return dayOfWeek;
+}
+
 #pragma mark - Table View Data Source Methods
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath;
@@ -112,7 +277,8 @@
     static NSString *CellIdentifier = @"RecentCell";
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
-    if (cell == nil) {
+    if (cell == nil)
+    {
         
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
         cell.textLabel.text = [NSString stringWithFormat:@"Address"];
@@ -161,170 +327,6 @@
 {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     NSLog(@"yo");
-}
-
-#pragma mark - Geocoding Methods
-
-- (void)performGeocode:(id)sender withAddress:(NSString *)address;
-{
-    CLGeocoder *geocoder = [[CLGeocoder alloc] init];
-    
-    // geocoder returns an array of placemarks. Each placemark is a string that needs to be parsed
-    [geocoder geocodeAddressString:address completionHandler:^(NSArray *placemarks, NSError *error) {
-        NSLog(@"geocodeAddressString:completionHandler: Completion Handler called!");
-      
-        if (error)
-        {
-            NSLog(@"Geocode failed with error: %@", error);
-            [self displayError:error];
-            return;
-        }
-        
-//        if ([placemarks count] > 0) {
-//            CLPlacemark *placemark = [placemarks objectAtIndex:0];
-//            CLLocation *location = placemark.location;
-//            
-//            self.endLoctation = location;
-//        }
-        
-        NSLog(@"Received placemarks: %@", placemarks);
-        [self.mapView showSearchResultsForArray:placemarks];
-    }];
-
-}
-
-// display a given NSError in an UIAlertView
-- (void)displayError:(NSError*)error
-{
-    dispatch_async(dispatch_get_main_queue(),^ {
-        
-        NSString *message;
-        switch ([error code])
-        {
-            case kCLErrorGeocodeFoundNoResult:
-                message = @"kCLErrorGeocodeFoundNoResult";
-                break;
-            case kCLErrorGeocodeCanceled:
-                message = @"kCLErrorGeocodeCanceled";
-                break;
-            case kCLErrorGeocodeFoundPartialResult:
-                message = @"kCLErrorGeocodeFoundNoResult";
-                break;
-            default:
-                message = [error description];
-                break;
-        }
-        
-        UIAlertView *alert =  [[UIAlertView alloc] initWithTitle:@"An error occurred."
-                                                          message:message
-                                                         delegate:nil
-                                                cancelButtonTitle:@"OK"
-                                                otherButtonTitles:nil];
-        [alert show];
-    });   
-}
-
-// Function creates an array of buttons that contain placemark information
-- (void)createPlacemarkArray:(NSArray *)placemarks;
-{
-    if (!self.dictionary)
-        self.dictionary = [[NSMutableDictionary alloc] init];
-    
-    // fast enumeration that parses each placemark and places it into the array placemarks
-    // SAMPLE PLACEMARK "University of Southern California, Los Angeles, CA  90007, United States @ <+34.02137294,-118.28668562> +/- 100.00m, region (identifier <+34.02208300,-118.28567550> radius 770.71) <+34.02208300,-118.28567550> radius 770.71m"
-    
-    // parse the placemark so the address is the key and the coordinate is the object
-    for (CLLocation *element in placemarks) {
-        
-        // seperate 
-        NSArray *firstParse = [[NSArray alloc] initWithArray:[[element description] componentsSeparatedByString:@"@"]];
-        NSArray *secondParse = [[NSArray alloc] initWithArray:[[firstParse objectAtIndex:0] componentsSeparatedByString:@","]];
-        
-        // create dictionary
-        [self.dictionary setObject:element forKey:[secondParse objectAtIndex:0]];
-        
-        // create button for the array
-        UIButton *button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-        [button setTitle:[secondParse objectAtIndex:0] forState:UIControlStateNormal]; //set the title of the button to the location 
-        [button sizeToFit];
-        
-    }
-    
-    // send to mapView
-    
-}
-
-#pragma mark - Time Methods
-
-- (NSString *)receiveRoundedTime;
-{
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"TimeIndex" ofType:@"plist"];
-    self.timeIndex = [[NSDictionary alloc] initWithContentsOfFile:path];
-    
-    NSDate *date = [[NSDate alloc] init];
-    NSString *roundedTime = [date setRoundTimeToString:[date currentTimeRoundedToNearestTimeInterval:15*60]];
-    
-    return [self.timeIndex valueForKey:roundedTime];
-}
-
-- (NSString *)receiveDayOfWeek;
-{
-    NSDate *date = [[NSDate alloc] init];
-    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-    
-    [dateFormatter setDateFormat:@"EEEE"];
-    NSString *dayOfWeek = [dateFormatter stringFromDate:date];
-    
-    return dayOfWeek;
-}
-
-#pragma mark - Results Delegate
-
-- (void)createLocationPointsForPlacemarks:(NSArray *)placemarks;
-{
-    for (CLLocation *element in placemarks)
-    {
-        // call rest kit
-        [self navigateTo:element forTimeIndex:[self receiveRoundedTime] forDay:[self receiveDayOfWeek]];
-    }
-    // call display method here.. might not work if restkit goes on another thread.
-}
-
-#pragma mark - Rest Kit Delegate
-
-- (void)navigateTo:(CLLocation *)end forTimeIndex:(NSString *)index forDay:(NSString *)day;
-{
-    
-    // Set parameters into dictionary
-    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
-                            [NSString stringWithFormat:@"%f,%f",kLAT,kLONG],@"start",
-                            [NSString stringWithFormat:@"%f,%f",end.coordinate.latitude,end.coordinate.longitude],@"end",
-                            index, @"time",
-                            @"False", @"update",
-                            [self receiveDayOfWeek], @"day",
-                            nil];
-    // start restkit
-    [self sendRequests:params];
-}
-
-- (void)sendRequests:(NSDictionary *)params;
-{
-    [[RKClient sharedClient] get:@"?" queryParameters:params delegate:self];
-}
-
-- (void)request:(RKRequest*)request didLoadResponse:(RKResponse*)response {
-    
-    if ([response isOK])
-    {
-        // Success! Let's take a look at the data
-        NSLog(@"Retrieved XML: %@", [response bodyAsString]);
-
-        // create location point
-        USCLocationPoint *locationPoint = [[USCLocationPoint alloc] init];
-        [locationPoint setAttributesFromString:[response bodyAsString]];
-        // set into mutable array for results
-        [self.mapView.resultsView.results addObject:locationPoint];
-    }
 }
 
 @end

@@ -11,6 +11,11 @@
 
 @interface USCViewController : UIViewController
 {
+    
+    NSString *_name, *_address;
+    
+    int _count, _reference;
+    
     struct {
         BOOL updated: 1;
         BOOL needsUpdate: 1;

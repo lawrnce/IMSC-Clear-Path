@@ -30,6 +30,7 @@
 
 @interface USCMapView : UIView <UIGestureRecognizerDelegate>
 {
+    
     UIPanGestureRecognizer *_panGestureRecognizer;
     UILongPressGestureRecognizer *_touchDownGestureRecognizer;
     UIView *_contentView;
@@ -56,8 +57,8 @@
 @property (nonatomic, strong) USCResults *resultsView;
 @property (nonatomic, strong) UITextField *searchBar;
 
-- (void)enableTouch:(BOOL)flag forMap:(MKMapView *)mapView;
+- (void)enableFullTouch:(BOOL)flag forMap:(MKMapView *)mapView;
 - (void)searchShowing:(BOOL)flag;
-- (void)showSearchResultsForArray:(NSArray *)array;
+- (void)showSearchResultsForPoints:(NSArray *)placemarks;
 
 @end

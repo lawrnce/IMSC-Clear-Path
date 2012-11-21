@@ -16,8 +16,9 @@
 
 @interface USCLocationPoint : CLLocation
 
-@property (nonatomic, strong) NSArray *coordinateArray;
+@property (nonatomic, strong) NSArray *coordinates;
 @property (nonatomic, strong) NSString *name;
+@property (nonatomic, strong) NSString *address;
 @property (nonatomic, strong) NSString *travelTime;
 @property (nonatomic, strong) NSNumber *travelTimeNumber;
 
