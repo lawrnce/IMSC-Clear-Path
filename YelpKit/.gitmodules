@@ -1,0 +1,3 @@
+[submodule "Libraries/GHKit"]
+	path = Libraries/GHKit
+	url = git://github.com/gabriel/gh-kit.git

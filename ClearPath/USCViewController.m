@@ -11,7 +11,7 @@
 #import <RestKit/RestKit.h>
 #import "USCMapView.h"
 #import "NSDate+RoundTime.h"
-#import "USCLocationPoint.h"
+#import "USCRoute.h"
 
 #define kSCALE 1
 #define kLAT 34.025454
@@ -53,13 +53,12 @@
 {
     [super viewDidLoad];
 	
-    // find current positoin
-//    [self receiveCurrentLocation];
-    
     // mapView
     self.mapView = [[USCMapView alloc]initWithFrame:CGRectZero]; // init
+    self.mapView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.view.bounds), CGRectGetMaxY(self.view.bounds));
+    self.mapView.center = self.view.center;
 
-    [self.view addSubview:self.mapView]; // add into subview
+    self.view = self.mapView;
     
     self.locationPoints = [[NSMutableArray alloc] init];
     
@@ -69,9 +68,6 @@
 {
     // set view defaults
     self.view.backgroundColor = [UIColor whiteColor];
-    
-    self.mapView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.view.bounds)*kSCALE, CGRectGetMaxY(self.view.bounds)*kSCALE);
-    self.mapView.center = self.view.center;
     
     // set delegate
     self.mapView.recentView.tableView.dataSource = self;
@@ -109,7 +105,18 @@
     
     // geocode result
     if (textField.text) [self performGeocode:self withAddress:textField.text];
+    
+    if (self.mapView.resultsView)
+    {
+        [self.mapView.resultsView removeFromSuperview];
+    }
 
+    // check start coordinate
+    if (!self.mapView.hasCustomStart)
+        self.mapView.startCoordinate = self.mapView.mapView.userLocation.coordinate;
+     
+        NSLog(@"Start Coordinate: %f, %f", self.mapView.startCoordinate.latitude, self.mapView.startCoordinate.longitude);
+    
     return NO;
 }
 
@@ -180,7 +187,7 @@
         // SAMPLE PLACEMARK "University of Southern California, Los Angeles, CA  90007, United States @ <+34.02137294,-118.28668562> +/- 100.00m, region (identifier <+34.02208300,-118.28567550> radius 770.71) <+34.02208300,-118.28567550> radius 770.71m"
         
         // create location point
-        USCLocationPoint *locationPoint = [[USCLocationPoint alloc] init];
+        USCRoute *locationPoint = [[USCRoute alloc] init];
         locationPoint.name = element.name;
         
         // set into mutable array for results
@@ -210,7 +217,7 @@
     
     // "34.025454,-118.291554"  Set parameters into dictionary
     NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
-                            [NSString stringWithFormat:@"%f,%f", self.mapView.mapView.userLocation.coordinate.latitude, self.mapView.mapView.userLocation.coordinate.longitude],@"start",
+                            [NSString stringWithFormat:@"%f,%f", self.mapView.startCoordinate.latitude, self.mapView.startCoordinate.longitude],@"start",
                             [NSString stringWithFormat:@"%f,%f",end.coordinate.latitude,end.coordinate.longitude],@"end",
                             index, @"time",
                             @"False", @"update",
@@ -240,6 +247,14 @@
         if(_count == _reference)
         {
             NSLog(@"SENT: %@", [[self.locationPoints objectAtIndex:0] name]);
+            
+            
+            //** test
+            for (int i = 0; i < 9; i++)
+            {
+                [self.locationPoints addObject:[self.locationPoints objectAtIndex:0]];
+            }
+            
             [self.mapView showSearchResultsForPoints:self.locationPoints];
         }
             

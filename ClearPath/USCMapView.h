@@ -37,14 +37,21 @@
     
     __unsafe_unretained id<USCLimitedPanMapViewDelegate> _delegate;
     
-    CGPoint _startPosition, _mapNeutralPosition ,_mapSearchPosition, _recentPosition, _searchBarPosition;
+    CGPoint _startPosition, _mapNeutralPosition ,_mapSearchPosition, _recentPosition, _searchBarPosition, _nodePosition;
     
-    struct {
+    struct
+    {
         BOOL neutral: 1;
         BOOL panning: 1;
         BOOL showingRecents: 1;
         BOOL showingSearch: 1;
     } _limitedPanMapFlags;
+    
+    struct
+    {
+        BOOL showingResults: 1;
+        BOOL showingPolyline: 1;
+    } _state;
 }
 
 @property (nonatomic, unsafe_unretained) id<USCLimitedPanMapViewDelegate> delegate;
@@ -56,6 +63,9 @@
 @property (nonatomic, strong) USCRecents *recentView;
 @property (nonatomic, strong) USCResults *resultsView;
 @property (nonatomic, strong) UITextField *searchBar;
+@property (nonatomic) CLLocationCoordinate2D startCoordinate;
+@property (nonatomic) CLLocationCoordinate2D endCoordinate;
+@property (nonatomic) BOOL hasCustomStart;
 
 - (void)enableFullTouch:(BOOL)flag forMap:(MKMapView *)mapView;
 - (void)searchShowing:(BOOL)flag;

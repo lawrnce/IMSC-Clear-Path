@@ -7,31 +7,49 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "USCResultCard.h"
+#import "USCResultsPageControl.h"
+#import "USCResultsScrollView.h"
 
-//@class USCResults;
-//
-//@protocol USCResultsDelegate <NSObject>
-//
-//@required
-//
-//- (void)createLocationPointsForPlacemarks:(NSArray *)placemarks;
-//
-//@end
+@class USCResults;
 
-@interface USCResults : UIView
+@protocol USCResultsDelegate <NSObject>
+
+@required
+
+- (void)willRouteTo:(USCRoute *)location;
+- (void)willDisplayInformationForCard:(USCResultCard *)card;
+
+@end
+
+@interface USCResults : UIView <UIScrollViewDelegate>
 {
-//    __unsafe_unretained id<USCResultsDelegate> _delegate;
-    NSDictionary *_dictionary;
-    __unsafe_unretained id _delegate;
-    int _index, _page;
+    BOOL itemsAdded;
+    
+	int columnCount;
+	int rowCount;
+	CGFloat itemWidth;
+	CGFloat itemHeight;
+    CGFloat minX;
+    CGFloat minY;
+    CGFloat paddingX;
+    CGFloat paddingY;
+    __unsafe_unretained id<USCResultsDelegate> _delegate;
+    USCResultCard *_selectedResultCard;
+    CGPoint _selectedOrginalPosition;
 }
 
-//@property (nonatomic, unsafe_unretained) id<USCResultsDelegate> delegate;
+@property (nonatomic, unsafe_unretained) id<USCResultsDelegate> delegate;
+@property (nonatomic, strong) USCResultsScrollView *pagesScrollView;
+@property (nonatomic, strong) USCResultsPageControl *pageControl;
+@property (nonatomic, strong) NSArray *pages;
 
-@property (nonatomic, strong) NSArray *resultCards;
+-(void)layoutLauncher;
+-(void)layoutLauncherAnimated:(BOOL)animated;
+-(int)maxItemsPerPage;
+-(int)maxPages;
 
-//- (void)setLocationPoints:(NSArray *)placemarks;
-
-- (id)initWithFrame:(CGRect)frame andWithResults:(NSArray *)results;
+- (id)initWithFrame:(CGRect)frame withPlacemarks:(NSArray *)pages delegate:(id<USCResultsDelegate>)delegate;
+- (void)moveSelectedCardToOrginal;
 
 @end

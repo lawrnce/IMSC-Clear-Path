@@ -10,144 +10,291 @@
 
 #import "USCResults.h"
 
-#import "USCLocationPoint.h"
-#import "USCResultCard.h"
+struct NItemLocation
+{
+	NSInteger page;
+	NSInteger sindex;
+};
 
-@interface USCResults()
+typedef struct NItemLocation NItemLocation;
 
-@property (nonatomic, strong) NSArray *displayArray;
+static const int pControllHeight = 30;
+static const int maxPageCount = 6;
 
-@property (nonatomic, strong) UIButton *result1;
-@property (nonatomic, strong) UIButton *result2;
-@property (nonatomic, strong) UIButton *result3;
+/* iPhone */
+static const int maxItemsPageCount = 3;
 
-@property (nonatomic, strong) UIButton *nextPage;
+static const int portraitItemWidth = 300;
+static const int portraitItemHeight = 100;
+static const int portraitColumnCount = 1;
+static const int portraitRowCount = 3;
+static const CGFloat portraitItemXStart = 10;
+static const CGFloat portraitItemYStart = 50;
+static const CGFloat portraitXPadding = 0;
+static const CGFloat portraitYPadding = 25;
+
+@interface USCResults () <USCResultCardDelegate>
+
+-(void)setupCurrentViewLayoutSettings;
+
+@property (nonatomic, retain) NSTimer *itemHoldTimer;
+@property (nonatomic, retain) NSTimer *movePagesTimer;
 
 @end
 
 @implementation USCResults
 
-@synthesize nextPage = _nextPage;
+@synthesize pagesScrollView = _pageScrollView;
+@synthesize pageControl = _pageControl;
+@synthesize pages = _pages;
+@synthesize itemHoldTimer = _itemHoldTimer;
+@synthesize movePagesTimer = _movePagesTimer;
 
+#pragma mark - View lifecycle
 
-- (id)initWithFrame:(CGRect)frame andWithResults:(NSArray *)results;
+- (id)initWithFrame:(CGRect)frame withPlacemarks:(NSArray *)placemarks delegate:(id<USCResultsDelegate>)delegate;
 {
-    self = [super initWithFrame:frame];
-    if (self)
-    {
-        self.userInteractionEnabled = YES;
+    if ((self = [super initWithFrame:frame]))
+	{
+		itemsAdded = NO;
+		[self setupCurrentViewLayoutSettings];
+	
+        // create array size of pages
+        NSMutableArray *pages = [[NSMutableArray alloc] init];
         
-        // set resultCard array to public property
-        self.resultCards = [[NSArray alloc] initWithArray:results];
+        // Content of one page
+        NSMutableArray *pageContent = [[NSMutableArray alloc] init];
         
-        // test
-//        NSLog(@"%@", [[self.resultCards objectAtIndex:0] name]);
+        // create a counter
+        NSInteger count = 0;
+        
+        // set placemarks to the pages
+        for (USCRoute *route in placemarks)
+        {
+            // init a resultCard with location point and add to array
+            [pageContent addObject:[[USCResultCard alloc] initWithFrame:CGRectZero withRoute:route delegate:self]];
+            
+            // increase count
+            count++;
+            
+            // three have been added
+            if (count == 3)
+            {
+                // add pageContent to pages
+                [pages addObject:[NSArray arrayWithArray:pageContent]];
+                
+                // clear pageContent;
+                [pageContent removeAllObjects];
+                
+                count = 0;
+            }
+        }
+        
+        // set in last page
+        if ([pageContent count] > 0)
+        {
+            [pages addObject:[NSArray arrayWithArray:pageContent]];
+            [pageContent removeAllObjects];
+        }
+        
+        [self setPages:pages];
+        
+        [self setDelegate:delegate];
+        
+		[self setPagesScrollView:[[USCResultsScrollView alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.height - pControllHeight)]];
+        
+		self.pagesScrollView.delegate = self;
+		self.pagesScrollView.pagingEnabled = YES;
+		self.pagesScrollView.showsHorizontalScrollIndicator = NO;
+		self.pagesScrollView.showsVerticalScrollIndicator = NO;
+		self.pagesScrollView.alwaysBounceHorizontal = YES;
+		self.pagesScrollView.scrollsToTop = NO;
+		self.pagesScrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+		self.pagesScrollView.delaysContentTouches = YES;
+		self.pagesScrollView.multipleTouchEnabled = NO;
+		[self addSubview:self.pagesScrollView];
+		
+		[self setPageControl:[[USCResultsPageControl alloc] initWithFrame:CGRectMake(0, frame.size.height - pControllHeight - 45, frame.size.width, pControllHeight)]]; //if starts landscape this will break...
+		self.pageControl.numberOfPages = 1;
+		self.pageControl.currentPage = 0;
+        self.pageControl.maxNumberOfPages = maxPageCount;
+		self.pageControl.backgroundColor = [UIColor clearColor];
+        self.pageControl.alpha = 1.0f;
+		[self.pageControl addTarget:self action:@selector(pageChanged) forControlEvents:UIControlEventValueChanged];
+		[self addSubview:self.pageControl];
+        
+        [self addObserver:self forKeyPath:@"frame" options:0 context:nil];
     }
     return self;
 }
 
-#pragma mark - Layout Methods
-
-- (void)layoutSubviews;
+-(void)layoutSubviews;
 {
     [super layoutSubviews];
     
-    _page = 1; //set page count 
-//    [self setInformationForPage:_page];
+    CGFloat pageWidth = self.pagesScrollView.frame.size.width;
+	
+    [self setupCurrentViewLayoutSettings];
     
-    // set page
-    [self setResultPositions];
-    
-    [self setInformationForPage:1];
-    
+	for (NSMutableArray *page in self.pages)
+	{
+        CGFloat x = minX;
+        CGFloat y = minY;
+		int itemsCount = 1;
+        
+		for (USCResultCard *item in page)
+		{
+            item.frame = CGRectMake(x, y, itemWidth, itemHeight);
+            [self.pagesScrollView addSubview:item];
+            
+			x += itemWidth + paddingX;
+            y += itemHeight + paddingY;
+            x = minX;
+			
+			itemsCount++;
+		}
+		
+		minX += pageWidth;
+	}
+	
+	self.pageControl.numberOfPages = self.pages.count;
+	self.pagesScrollView.contentSize = CGSizeMake(self.pagesScrollView.frame.size.width * self.pages.count,rowCount * itemHeight);
+	
+	itemsAdded = YES;
 }
 
-#pragma mark - Display Methods
-
-- (void)setInformationForPage:(int)page;
+- (void)dealloc
 {
-    // place each result in appropiate location
-    for (int i = 0; i < [self.resultCards count]; i++)
+    [self removeObserver:self forKeyPath:@"frame"];
+}
+
+#pragma mark - Results Card Delegate Methods
+
+// prepares mapView to route
+- (void)willRouteAsDestination:(USCRoute *)route;
+{
+    if ([self.delegate respondsToSelector:@selector(willRouteTo:)])
+        [self.delegate willRouteTo:route];
+}
+
+- (void)willShowInformation:(USCResultCard *)resultCard
+{
+    if ([self.delegate respondsToSelector:@selector(willDisplayInformationForCard:)])
+        [self.delegate willDisplayInformationForCard:resultCard];
+    
+    // save original center
+    _selectedOrginalPosition = resultCard.center;
+    
+    // store point to card
+    _selectedResultCard = resultCard;
+    
+    // remove all result cards
+    for (NSMutableArray *page in self.pages)
     {
-        // set frame
-        [[self.resultCards objectAtIndex:i] setFrame:CGRectMake(0, 0, CGRectGetMaxX(self.bounds)*0.95f, CGRectGetMaxY(self.bounds)*0.25f)];
-        // set center *** THIS WILL BE CHANGED AFTER WE GET MORE THAN ONE RESULT***
-        [[self.resultCards objectAtIndex:i] setCenter:CGPointMake(self.center.x, CGRectGetMaxY(self.bounds)*.15f)];
-        // add to subview
-        [self addSubview:[self.resultCards objectAtIndex:i]];
+        for (USCResultCard *item in page)
+		{
+            if (resultCard != item)
+            item.hidden = YES;
+		}
     }
-//
-//    // find starting index for given page
-//    int i;
-//    NSArray *array;
-//    
-//    // find the starting index according to the page given
-//    // (1,0) (2,3) (3,6) (4,9) (5,12) -> relation is *3 -3
-//    i = page * 3.0 - 3.0;
-//    
-//    // set information for the buttons in the page
-//  
-//    for (int j = 0; j < 3; j++)
-//    {
-//        NSArray *firstParse = [[NSArray alloc] initWithArray:[[self.array objectAtIndex:i] componentsSeparatedByString:@"@"]];
-//        NSArray *secondParse = [[NSArray alloc] initWithArray:[[firstParse objectAtIndex:0] componentsSeparatedByString:@","]];
-//        
-//        i++;
-//    }
+    
+    // move card to top
+    [UIView animateWithDuration:0.3f animations:^{
+    
+        CGPoint point = resultCard.center;
+        
+        point.y = (CGRectGetMidY(self.bounds) * 0.27f);
+        
+        resultCard.center = point;
+    
+    }];
+    
+    // remove page control
+    self.pageControl.hidden = YES;
+    self.pagesScrollView.userInteractionEnabled = NO;
+    
+    // find current page
+    NSLog(@"%d", [self.pageControl currentPage]);
 }
 
-- (void)setInitialButtonPosition;
+- (void)moveSelectedCardToOrginal;
 {
-
+    // move card to top
+    [UIView animateWithDuration:0.3f animations:^{
+        
+        _selectedResultCard.center = _selectedOrginalPosition;
+        
+    }];
 }
 
-- (void)setResultPositions;
+#pragma mark - ScrollView and PageControl Management
+
+- (void)pageChanged
 {
-//    CGFloat x, y;
-//    int pages;
-//    
-//    x = CGRectGetMidX(self.bounds);
-//    y = CGRectGetMidY(self.bounds)/2.0f;
-//    
-//    pages = [self.array count]/3;
-//    
-//    if ([self.array count] % 3 > 0)
-//        pages++;
-//    
-//    for (int i = 0; i < pages; i++)
-//        for (int j = 0; j < 3; j++) {
-//            [[self.array objectAtIndex:i] setCenter:CGPointMake(x, y + (i * 100))];
-//            if (j == 3) x += CGRectGetMaxX(self.bounds);
-//        }
-//}
-//
-//- (void)showSearchResultsForArray:(NSArray *)array withDicionary:(NSDictionary *)dictionary;
-//{
-//    _dictionary = dictionary;
-//    
-//    self.array = [[NSArray alloc] initWithArray:array];
-//    
-//    for (int i = 0; i < [array count]; i++) {
-//        [[self.array objectAtIndex:i] setCenter:CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMidY(self.bounds)/2.0f+(i * 100))];
-//        [[self.array objectAtIndex:i] sizeToFit];
-//        [[self.array objectAtIndex:i] setFrame:CGRectIntegral([[self.array objectAtIndex:i] frame])];
-//        [self addSubview:[self.array objectAtIndex:i]];
-//    }
-//    
-//    _index = [array count];
+	self.pagesScrollView.contentOffset = CGPointMake(self.pageControl.currentPage * self.pagesScrollView.frame.size.width, 0);
 }
 
-//#pragma mark - Delegate Passing
-//
-//- (void)setLocationPoints:(NSArray *)placemarks;
-//{
-//    // check delegate
-//    if([self.delegate respondsToSelector:@selector(createLocationPointsForPlacemarks:)])
-//       [self.delegate createLocationPointsForPlacemarks:placemarks];
-//}
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
+{
+	self.pageControl.currentPage = floor((self.pagesScrollView.contentOffset.x - self.pagesScrollView.frame.size.width / 2) /
+                                         self.pagesScrollView.frame.size.width) + 1;	
+}
 
-#pragma mark - Getters and Setters
+- (void)updateFrames
+{
+    self.pagesScrollView.frame = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height - pControllHeight);
+	self.pageControl.frame = CGRectMake(0, self.frame.size.height - pControllHeight, self.frame.size.width, pControllHeight);
+	[self.pageControl setNeedsDisplay];
+}
 
+-(void)didChangeValueForKey:(NSString *)key
+{
+    if ([key isEqualToString:@"frame"]) {
+        [self updateFrames];
+    }
+}
 
+#pragma mark - Layout Settings
+
+-(int)maxItemsPerPage
+{
+    return maxItemsPageCount;
+}
+
+-(int)maxPages
+{
+    return maxPageCount;
+}
+
+-(void)setupCurrentViewLayoutSettings
+{
+    minX = portraitItemXStart;
+    minY = portraitItemYStart;
+    paddingX = portraitXPadding;
+    paddingY = portraitYPadding;
+    columnCount = portraitColumnCount;
+    rowCount = portraitRowCount;
+    itemWidth = portraitItemWidth;
+    itemHeight = portraitItemHeight;
+}
+
+#pragma mark - Layout Management
+
+-(void)layoutLauncher
+{
+	[self layoutLauncherAnimated:YES];
+}
+
+-(void)layoutLauncherAnimated:(BOOL)animated
+{
+    [self updateFrames];
+    
+    [UIView animateWithDuration:animated ? 0.3 : 0
+                     animations:^{
+                         [self layoutIfNeeded];
+                     }];
+    
+	[self pageChanged];
+}
 
 @end

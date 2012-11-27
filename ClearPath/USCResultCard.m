@@ -7,15 +7,16 @@
 //
 
 #import "USCResultCard.h"
+#import "UIColor+EasySet.h"
 
 #define kContetViewInserts UIEdgeInsetsMake(10.0f, 10.0f, 10.0f, 10.0f)
 #define kTitleViewInserts UIEdgeInsetsMake(3.0f, 0.0f, 7.0f, 0.0f)
 
 @interface USCResultCard ()
 
-@property (nonatomic, strong) UIView *overlayView;
 @property (nonatomic, strong) UIView *contentView;
 
+@property (nonatomic, strong) UIButton *sideButton;
 
 @end
 
@@ -23,13 +24,14 @@
 
 @synthesize touchGestureRecognizer = _touchGestureRecognizer;
 
-@synthesize locationPoint = _locationPoint;
+@synthesize route = _route;
 @synthesize title = _title;
 @synthesize subtitle = _subtitle;
 
 @synthesize contentView = _contentView;
+@synthesize sideButton = _sideButton;
 
-- (id)initWithFrame:(CGRect)frame withPoint:(USCLocationPoint *)point delegate:(id<USCResultCardDelegate>)delegate;
+- (id)initWithFrame:(CGRect)frame withRoute:(USCRoute *)r delegate:(id<USCResultCardDelegate>)delegate;
 {
     self = [super initWithFrame:frame];
     if (self)
@@ -37,21 +39,24 @@
         // set delegate
         [self setDelegate:delegate];
         
-        self.locationPoint = point;
+        self.route = r;
         
         self.userInteractionEnabled = YES;
         
         // Initialization code
-        self.backgroundColor = [UIColor cyanColor];
+        [self setBackgroundColor:[UIColor colorWithR:254 G:254 B:232 A:1]];
         
-        self.overlayView = [[UIView alloc] initWithFrame:CGRectZero];
         self.contentView = [[UIView alloc] initWithFrame:CGRectZero];
         self.title = [[UILabel alloc] initWithFrame:CGRectZero];
         self.subtitle = [[UILabel alloc] initWithFrame:CGRectZero];
         
         self.touchGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleGesture:)];
         self.touchGestureRecognizer.delegate = self;
-        [self.overlayView addGestureRecognizer:self.touchGestureRecognizer];
+        [self addGestureRecognizer:self.touchGestureRecognizer];
+        
+        // init sideButton
+        self.sideButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        [self.sideButton addTarget:self action:@selector(_willRouteAsDestination) forControlEvents:UIControlEventTouchUpInside];
     }
     return self;
 }
@@ -62,45 +67,19 @@
 {
     [super layoutSubviews];
     
-//    // set contentView
-//    self.contentView.frame = self.bounds;
-//    
-//    [self.contentView sizeToFit];
-//    
-//    // Position content view
-//    UIEdgeInsets contentInsets = kContetViewInserts;
-//    CGPoint contentViewOrigin = CGPointMake(contentInsets.left, contentInsets.top);
-//    CGRect contentViewFrame = self.contentView.frame;
-//    contentViewFrame.origin = contentViewOrigin;
-//    self.contentView.frame = contentViewFrame;
-//
-    
-    
     // position title and subtitle
-    [self.title setText:self.locationPoint.name];
+    [self.title setText:self.route.name];
     self.title.font = [UIFont fontWithName:@"HelveticaNeue" size:22];
     [self.title sizeToFit];
     self.title.center = CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMidY(self.bounds));
-    
     [self addSubview:self.title];
     
-    self.overlayView.frame = self.bounds;
-    self.overlayView.center = CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMidY(self.bounds));
-    self.overlayView.backgroundColor = [UIColor clearColor];
-    [self addSubview:self.overlayView];
+    // position sideButton
+    [self.sideButton setTitle:@">" forState:UIControlStateNormal];
+    [self.sideButton sizeToFit];
+    self.sideButton.center = CGPointMake(CGRectGetMaxX(self.bounds) * 0.9f, CGRectGetMidY(self.bounds));
+    [self addSubview:self.sideButton];
 }
-
-//- (CGSize)sizeThatFits:(CGSize)size;
-//{
-//    UIEdgeInsets contentInsets = kContetViewInserts;
-//    CGSize contentViewConstraint = size;
-//    contentViewConstraint.height -= contentInsets.top + contentInsets.bottom;
-//    contentViewConstraint.width -= contentInsets.left + contentInsets.right;
-//    CGSize contentViewSize = [self.contentView sizeThatFits:contentViewConstraint];
-//    
-//    CGSize sizeThatFits = CGSizeMake(contentViewSize.width + contentInsets.left + contentInsets.right, contentViewSize.height + contentInsets.top + contentInsets.bottom);
-//    return sizeThatFits;
-//}
 
 #pragma mark - Handle Gestures
 
@@ -117,10 +96,12 @@
 
 - (void)handleGesture:(UITapGestureRecognizer *)gesture;
 {
+    
     if (gesture.state == UIGestureRecognizerStateEnded)
     {
          NSLog(@"Touch Ended");
-        [self _cardDidGetPressed];
+        
+        [self _willShowInformation];
         
         [UIView animateWithDuration:0.1f animations:^{
             
@@ -132,10 +113,16 @@
 
 #pragma mark - Delegate Passing
 
-- (void)_cardDidGetPressed;
+- (void)_willRouteAsDestination;
 {
-    if ([self.delegate respondsToSelector:@selector(cardDidPressFor:)])
-        [self.delegate cardDidPressFor:self.locationPoint];
+    if ([self.delegate respondsToSelector:@selector(willRouteAsDestination:)])
+        [self.delegate willRouteAsDestination:self.route];
+}
+
+- (void)_willShowInformation;
+{
+    if ([self.delegate respondsToSelector:@selector(willShowInformation:)])
+        [self.delegate willShowInformation:self];
 }
 
 @end

@@ -6,10 +6,10 @@
 //  Copyright (c) 2012 Lawrence Tran. All rights reserved.
 //
 
-#import "USCLocationPoint.h"
+#import "USCRoute.h"
 #import "USCParse.h"
 
-@implementation USCLocationPoint
+@implementation USCRoute
 
 @synthesize coordinates = coordinates;
 @synthesize name = _name;

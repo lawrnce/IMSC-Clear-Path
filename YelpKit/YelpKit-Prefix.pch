@@ -1,0 +1,10 @@
+//
+// Prefix header for all source files of the 'YelpKit' target in the 'YelpKit' project
+//
+
+#ifdef __OBJC__
+  #import <Foundation/Foundation.h>
+  #import <UIKit/UIKit.h>
+  #import <QuartzCore/QuartzCore.h>
+  #import <GHKit/GHKit.h>
+#endif

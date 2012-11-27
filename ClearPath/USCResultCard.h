@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-#import "USCLocationPoint.h"
+#import "USCRoute.h"
 
 @class USCResultCard;
 
@@ -16,15 +16,8 @@
 
 @required
 
-- (void)cardDidPressFor:(USCLocationPoint *)location;
-
-
-//- (BOOL)mapShouldBeginPanning:(USCLimitedPanMapView *)profilePic;
-//- (void)mapDidBeginPanning:(USCLimitedPanMapView *)profilePic;
-//- (void)mapDidPan:(USCLimitedPanMapView *)profilePic;
-//
-//- (void)mapWillSnapToStart:(USCLimitedPanMapView *)profilePic duration:(NSTimeInterval)duration;
-//- (void)mapDidSnapToStart:(USCLimitedPanMapView *)profilePic;
+- (void)willRouteAsDestination:(USCRoute *)route;
+- (void)willShowInformation:(USCResultCard *)resultCard;
 
 @end
 
@@ -37,10 +30,10 @@
 @property (nonatomic, unsafe_unretained) id<USCResultCardDelegate> delegate;
 
 @property (nonatomic, strong) UITapGestureRecognizer *touchGestureRecognizer;
-@property (nonatomic, strong) USCLocationPoint *locationPoint;
+@property (nonatomic, strong) USCRoute *route;
 @property (nonatomic, strong) UILabel *title;
 @property (nonatomic, strong) UILabel *subtitle;
 
-- (id)initWithFrame:(CGRect)frame withPoint:(USCLocationPoint *)point delegate:(id<USCResultCardDelegate>)delegate;
+- (id)initWithFrame:(CGRect)frame withRoute:(USCRoute *)point delegate:(id<USCResultCardDelegate>)delegate;
 
 @end

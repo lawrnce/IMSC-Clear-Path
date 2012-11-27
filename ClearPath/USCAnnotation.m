@@ -10,4 +10,7 @@
 
 @implementation USCAnnotation
 
+@synthesize coordinate = _coordinate;
+@synthesize title = _title;
+
 @end

@@ -14,7 +14,7 @@
 
 #import <CoreLocation/CoreLocation.h>
 
-@interface USCLocationPoint : CLLocation
+@interface USCRoute : CLLocation
 
 @property (nonatomic, strong) NSArray *coordinates;
 @property (nonatomic, strong) NSString *name;

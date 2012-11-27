@@ -22,7 +22,7 @@
     self.viewController = [[USCViewController alloc]init];
     
     // hide status bar
-    [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationFade];
+    [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleBlackTranslucent animated:YES];
     
     self.window.rootViewController = self.viewController;
     [self.window makeKeyAndVisible];

@@ -11,4 +11,7 @@
 
 @interface USCAnnotation : NSObject <MKAnnotation>
 
+@property (nonatomic, readwrite, assign) CLLocationCoordinate2D coordinate;
+@property (nonatomic, readwrite, copy) NSString *title;
+
 @end
