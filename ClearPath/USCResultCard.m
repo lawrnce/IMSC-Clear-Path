@@ -131,7 +131,7 @@
     time.frame = CGRectIntegral(time.frame);
     [self addSubview:time];
     
-    self.sideButton.center = CGPointMake(CGRectGetMaxX(self.bounds) * 0.9f, CGRectGetMidY(self.bounds));
+    self.sideButton.center = CGPointMake(CGRectGetMaxX(self.bounds) * 0.9f, CGRectGetMidY(self.bounds) * 1.5f);
     [self addSubview:self.sideButton];
 }
 

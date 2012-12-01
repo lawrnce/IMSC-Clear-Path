@@ -80,7 +80,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         
         // set background color
         self.backgroundColor = [UIColor colorWithR:248 G:228 B:204 A:1];
-        self.backgroundColor = [UIColor lightGrayColor];
+//        self.backgroundColor = [UIColor lightGrayColor];
         
         // mapView
         self.mapView = [[MKMapView alloc] initWithFrame:CGRectZero];
