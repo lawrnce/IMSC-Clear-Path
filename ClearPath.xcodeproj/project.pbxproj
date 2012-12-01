@@ -14,6 +14,7 @@
 		9641513916609EE000577A36 /* USCPathNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 9641513816609EE000577A36 /* USCPathNode.m */; };
 		964DC0A2164B581E00472402 /* USCParse.m in Sources */ = {isa = PBXBuildFile; fileRef = 964DC0A1164B581E00472402 /* USCParse.m */; };
 		964DC0B1164B639C00472402 /* TimeIndex.plist in Resources */ = {isa = PBXBuildFile; fileRef = 964DC0B0164B639C00472402 /* TimeIndex.plist */; };
+		965874A2166AB5FF00531D54 /* 0.png in Resources */ = {isa = PBXBuildFile; fileRef = 965874A1166AB5FF00531D54 /* 0.png */; };
 		9665AD57165DADB1008181A4 /* USCResultsPageControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 9665AD56165DADB1008181A4 /* USCResultsPageControl.m */; };
 		9665AD5A165DB257008181A4 /* USCResultsScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9665AD59165DB257008181A4 /* USCResultsScrollView.m */; };
 		96667AF51607CEA9000D66B2 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 96667AF41607CEA9000D66B2 /* Default-568h@2x.png */; };
@@ -120,6 +121,7 @@
 		964DC0A0164B581E00472402 /* USCParse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = USCParse.h; sourceTree = "<group>"; };
 		964DC0A1164B581E00472402 /* USCParse.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = USCParse.m; sourceTree = "<group>"; };
 		964DC0B0164B639C00472402 /* TimeIndex.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = TimeIndex.plist; sourceTree = "<group>"; };
+		965874A1166AB5FF00531D54 /* 0.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 0.png; sourceTree = "<group>"; };
 		9665AD18165C72F8008181A4 /* libGHKit.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libGHKit.a; path = "YelpKit/Libraries/GHKit/Build/Products/Release-iphoneos/libGHKit.a"; sourceTree = "<group>"; };
 		9665AD1B165C7435008181A4 /* GHKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GHKit.framework; path = YelpKit/Libraries/GHKit/build/Release/GHKit.framework; sourceTree = "<group>"; };
 		9665AD55165DADB1008181A4 /* USCResultsPageControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = USCResultsPageControl.h; sourceTree = "<group>"; };
@@ -343,6 +345,7 @@
 		96BADDCC16696F460085632F /* images */ = {
 			isa = PBXGroup;
 			children = (
+				965874A1166AB5FF00531D54 /* 0.png */,
 				96DC80A216697F880014EF46 /* close_small.png */,
 				96DC80A316697F880014EF46 /* close_small@2x.png */,
 				96BADDCD16696F460085632F /* BArrow_medium.png */,
@@ -497,6 +500,7 @@
 				96BADDEC16696F460085632F /* Trash_small@2x.png in Resources */,
 				96DC80A416697F880014EF46 /* close_small.png in Resources */,
 				96DC80A516697F880014EF46 /* close_small@2x.png in Resources */,
+				965874A2166AB5FF00531D54 /* 0.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

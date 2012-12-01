@@ -37,8 +37,8 @@
     
     
     // enum for cordinates
-    for (NSString *coordinates in rawLatLong) {
-        
+    for (NSString *coordinates in rawLatLong)
+    {
         // create CLL coordinate to store into mutable array
         CLLocationCoordinate2D location;
         
@@ -52,8 +52,10 @@
         [routeCoordinates addObject:[[CLLocation alloc] initWithLatitude:location.latitude longitude:location.longitude]];
     }
     
+    
+    
     NSNumber *travelTime = [numberFormatter numberFromString:[confrimationTags objectAtIndex:0]];
-    NSString *travelTimeDisplay = [NSString stringWithFormat:@"%.0f Minutes", [travelTime doubleValue]];
+    NSString *travelTimeDisplay = [NSString stringWithFormat:@"%.0f Minutes    50 Miles", [travelTime doubleValue]];
     
     // set string time into array
     [routeCoordinates addObject:travelTimeDisplay];

@@ -40,7 +40,7 @@
         // set delegate
         [self setDelegate:delegate];
         
-        self.backgroundColor = [UIColor colorWithR:102 G:102 B:102 A:0.5f];
+        self.backgroundColor = [UIColor colorWithR:102 G:102 B:102 A:0.4f];
         
         self.route = r;
         
@@ -79,6 +79,7 @@
     [indexButton sizeToFit];
     indexButton.center = CGPointMake(CGRectGetMidX(indexButton.bounds), CGRectGetMidY(self.bounds));
     [self addSubview:indexButton];
+    [indexButton addTarget:self action:@selector(_willShowInformation) forControlEvents:UIControlEventTouchUpInside];
     
     UILabel *indexNumber = [[UILabel alloc] initWithFrame:CGRectZero];
     indexNumber.backgroundColor = [UIColor clearColor];
@@ -90,26 +91,43 @@
     indexNumber.frame = CGRectIntegral(indexNumber.frame);
     indexNumber.center = CGPointMake(CGRectGetMidX(indexButton.bounds), CGRectGetMidY(indexButton.bounds)-2);
     [indexButton addSubview:indexNumber];
+
+    
+    
+    
+    
+    
     
     // position title and subtitle
     [self.title setText:self.route.name];
     self.title.textAlignment = UITextAlignmentLeft;
-    self.title.font = [UIFont fontWithName:@"HelveticaNeue-Medium" size:36];
-    self.title.textColor = [UIColor colorWithRed:254.0f green:254.0f blue:232.0f alpha:1.0f];
+    self.title.font = [UIFont fontWithName:@"HelveticaNeue-Medium" size:20];
+    self.title.textColor = [UIColor colorWithR:51 G:51 B:255 A:1];
     self.title.textColor = [UIColor whiteColor];
     self.title.backgroundColor = [UIColor clearColor];
     [self.title sizeToFit];
-    [self.title setFrame:CGRectMake(CGRectGetMaxX(indexButton.bounds) + 5.0f, CGRectGetMidY(self.title.bounds) - CGRectGetMidY(self.title.bounds) * 0.75f,
-                                    CGRectGetMaxX(self.title.bounds), CGRectGetMaxY(self.title.bounds))];
+    [self.title setFrame:CGRectMake(CGRectGetMaxX(indexButton.bounds) + 5.0f, indexButton.frame.origin.y,
+                                    CGRectGetMidX(self.bounds), CGRectGetMaxY(self.title.bounds))];
     self.title.frame = CGRectIntegral(self.title.frame);
+    
+    CGSize maximumLabelSize = CGSizeMake(296, 9999);
+    CGSize expectedLabelSize = [self.route.name sizeWithFont:self.title.font constrainedToSize:maximumLabelSize lineBreakMode:self.title.lineBreakMode];
+    CGRect newFrame = self.title.frame;
+    newFrame.size.width = expectedLabelSize.width;
+    self.title.frame = newFrame;
     [self makeShadowForLabel:self.title];
     [self addSubview:self.title];
+    
+    
+    
+    
+    
     
     // position address
     UILabel *address = [[UILabel alloc] initWithFrame:CGRectZero];
     [address setText:self.route.address];
     address.textAlignment = UITextAlignmentLeft;
-    address.font = [UIFont fontWithName:@"Helvetica-Bold" size:20];
+    address.font = [UIFont fontWithName:@"Helvetica-Bold" size:15];
     address.textColor = [UIColor whiteColor];
     address.backgroundColor = [UIColor clearColor];
     [address sizeToFit];
@@ -123,15 +141,15 @@
     [time setText:self.route.travelTime];
     time.textAlignment = UITextAlignmentLeft;
     time.backgroundColor = [UIColor clearColor];
-    time.textColor = [UIColor whiteColor];
-    time.font = [UIFont fontWithName:@"Helvetica-Bold" size:20];
+    time.textColor = [UIColor colorWithR:51 G:51 B:255 A:1];
+    time.font = [UIFont fontWithName:@"Helvetica-Bold" size:15];
     [time sizeToFit];
-    time.frame = CGRectMake(self.title.frame.origin.x + 22.0f, address.frame.origin.y + CGRectGetMaxY(address.bounds),
+    time.frame = CGRectMake(self.title.frame.origin.x, self.title.frame.origin.y + CGRectGetMaxY(self.title.bounds),
                               CGRectGetMaxX(time.bounds), CGRectGetMaxY(time.bounds));
     time.frame = CGRectIntegral(time.frame);
     [self addSubview:time];
     
-    self.sideButton.center = CGPointMake(CGRectGetMaxX(self.bounds) * 0.9f, CGRectGetMidY(self.bounds) * 1.5f);
+    self.sideButton.center = CGPointMake(CGRectGetMaxX(self.bounds) * 0.95f, CGRectGetMidY(self.bounds));
     [self addSubview:self.sideButton];
 }
 
@@ -145,7 +163,7 @@
     titleShadow.backgroundColor = [UIColor clearColor];
     [titleShadow sizeToFit];
     titleShadow.frame = CGRectIntegral(self.title.frame);
-    titleShadow.center = CGPointMake(label.center.x*1.015f, label.center.y*1.05f);
+    titleShadow.center = CGPointMake(label.center.x*1.01f, label.center.y*1.005f);
     [self addSubview:titleShadow];
 }
 
@@ -158,7 +176,7 @@
     {
          NSLog(@"Touch Ended");
         
-        [self _willShowInformation];
+        
     
     }
 }
