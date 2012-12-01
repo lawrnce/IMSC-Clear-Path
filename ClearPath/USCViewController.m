@@ -66,9 +66,6 @@
 
 - (void)viewDidAppear:(BOOL)animated
 {
-    // set view defaults
-    self.view.backgroundColor = [UIColor whiteColor];
-    
     // set delegate
     self.mapView.recentView.tableView.dataSource = self;
     self.mapView.recentView.tableView.delegate = self;

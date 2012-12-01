@@ -29,9 +29,9 @@ static const int portraitItemHeight = 100;
 static const int portraitColumnCount = 1;
 static const int portraitRowCount = 3;
 static const CGFloat portraitItemXStart = 10;
-static const CGFloat portraitItemYStart = 50;
+static const CGFloat portraitItemYStart = 60;
 static const CGFloat portraitXPadding = 0;
-static const CGFloat portraitYPadding = 25;
+static const CGFloat portraitYPadding = 30;
 
 @interface USCResults () <USCResultCardDelegate>
 
@@ -68,14 +68,18 @@ static const CGFloat portraitYPadding = 25;
         // create a counter
         NSInteger count = 0;
         
+        // for index
+        int index = 1;
+        
         // set placemarks to the pages
         for (USCRoute *route in placemarks)
         {
             // init a resultCard with location point and add to array
-            [pageContent addObject:[[USCResultCard alloc] initWithFrame:CGRectZero withRoute:route delegate:self]];
+            [pageContent addObject:[[USCResultCard alloc] initWithFrame:CGRectZero withRoute:route delegate:self withIndex:index]];
             
             // increase count
             count++;
+            index++;
             
             // three have been added
             if (count == 3)

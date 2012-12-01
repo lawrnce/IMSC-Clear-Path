@@ -15,6 +15,7 @@
 #import "USCAnnotation.h"
 #import "USCResultInformation.h"
 #import "USCPathNode.h"
+#import "UIImage+Loading.h"
 
 #define METERS_PER_MILE 1609.344
 #define kRECENTS_THRESHOLD 100
@@ -40,6 +41,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @property (nonatomic, strong) USCResultInformation *resultInformation;
 @property (nonatomic, strong) USCPathNode *startNode;
 @property (nonatomic, strong) UILabel *label;
+@property (nonatomic, strong) UIButton *user;
 
 @end
 
@@ -69,6 +71,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @synthesize backButton = _backButton;
 @synthesize resultInformation = _resultInformation;
 @synthesize startNode = _startNode;
+@synthesize user = _user;
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -77,13 +80,13 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         
         // set background color
         self.backgroundColor = [UIColor colorWithR:248 G:228 B:204 A:1];
+//        self.backgroundColor = [UIColor lightGrayColor];
         
         // mapView
         self.mapView = [[MKMapView alloc] initWithFrame:CGRectZero];
         [self addSubview:self.mapView];                                 // add mapView to underlay view
         self.mapView.delegate = self;
-        
-        self.mapView.showsUserLocation = YES;
+    
         self.mapView.userInteractionEnabled = YES;
         [self enableFullTouch:NO forMap:self.mapView];                      //disable all touch events
 
@@ -101,7 +104,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         // backButton
         self.backButton = [UIButton buttonWithType:UIButtonTypeCustom];
         self.backButton.userInteractionEnabled = YES;
-        [self.backButton setBackgroundImage:[UIImage imageNamed:@"close.png"] forState:UIControlStateNormal];
+        [self.backButton setBackgroundImage:[UIImage imageNamed:@"close_small.png"] forState:UIControlStateNormal];
         [self.backButton sizeToFit];
         [self.backButton addTarget:self action:@selector(_backButton:) forControlEvents:UIControlEventTouchUpInside];
         
@@ -121,9 +124,21 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.mapView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.bounds)*3, CGRectGetMaxY(self.bounds)*3);
     self.mapView.center = self.center;
     
+    
     // center map
     if (!self.showingPolyline)
         [self centerMapTo:self.mapView.userLocation.coordinate withTrackingMode:MKUserTrackingModeFollow withDuration:2.0f];
+    
+    // create overlay for map
+    
+    
+    // user place button
+    self.user = [UIButton buttonWithType:UIButtonTypeCustom];
+    [self.user setBackgroundImage:[UIImage imageNamed:@"Button_medium.png"] forState:UIControlStateNormal];
+    [self.user sizeToFit];
+    self.user.center = [self.mapView convertCoordinate:self.mapView.userLocation.coordinate toPointToView:self];
+    self.user.center = self.mapView.center;
+    [self addSubview:self.user];
     
     // set searchBar
     self.searchBar.frame = CGRectMake(5.0f, 5.0f, CGRectGetMaxX(self.bounds)-10.0f, 30);
@@ -165,7 +180,10 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     [self.searchBar removeFromSuperview];
     [self addSubview:self.searchBar];
     
-    self.mapView.alpha = 0.6f;
+    [UIView animateWithDuration:0.3f animations:^{
+        self.mapView.alpha = 0.3f;
+    }];
+    
     
     // change flags
     self.showingResults = YES;
@@ -306,15 +324,25 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 
 - (MKAnnotationView *)mapView:(MKMapView *)mapView viewForAnnotation:(id<MKAnnotation>)annotation;
 {
-    if ([annotation isKindOfClass:[MKUserLocation class]]) {
-        return nil;
+    static NSString *AnnotationViewID = @"annotationViewID";
+    
+    MKAnnotationView *annotationView = (MKAnnotationView *)[mapView dequeueReusableAnnotationViewWithIdentifier:AnnotationViewID];
+    
+    if (annotationView == nil)
+    {
+        annotationView = [[MKAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:AnnotationViewID];
     }
     
-    MKPinAnnotationView *annotationView = [[MKPinAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:@"current location"];
-    
-    annotationView.animatesDrop = YES;
+    annotationView.image = [UIImage imageNamed:@"Button_medium.png"];
+    annotationView.annotation = annotation;
     
     return annotationView;
+}
+
+-(void)mapView:(MKMapView *)mapView didAddAnnotationViews:(NSArray *)views
+{
+    MKAnnotationView *ulv = [mapView viewForAnnotation:mapView.userLocation];
+    ulv.hidden = YES;
 }
 
 #pragma mark - PolyLine and Annotation Methods

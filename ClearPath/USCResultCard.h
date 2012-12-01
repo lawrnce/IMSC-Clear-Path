@@ -25,6 +25,7 @@
 {
     UITapGestureRecognizer *_touchGestureRecognizer;
     __unsafe_unretained id<USCResultCardDelegate> _delegate;
+    int _index;
 }
 
 @property (nonatomic, unsafe_unretained) id<USCResultCardDelegate> delegate;
@@ -34,6 +35,6 @@
 @property (nonatomic, strong) UILabel *title;
 @property (nonatomic, strong) UILabel *subtitle;
 
-- (id)initWithFrame:(CGRect)frame withRoute:(USCRoute *)point delegate:(id<USCResultCardDelegate>)delegate;
+- (id)initWithFrame:(CGRect)frame withRoute:(USCRoute *)point delegate:(id<USCResultCardDelegate>)delegate withIndex:(int)index;
 
 @end

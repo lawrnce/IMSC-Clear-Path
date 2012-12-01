@@ -53,7 +53,7 @@
     }
     
     NSNumber *travelTime = [numberFormatter numberFromString:[confrimationTags objectAtIndex:0]];
-    NSString *travelTimeDisplay = [NSString stringWithFormat:@"%.0f Mins", [travelTime doubleValue]];
+    NSString *travelTimeDisplay = [NSString stringWithFormat:@"%.0f Minutes", [travelTime doubleValue]];
     
     // set string time into array
     [routeCoordinates addObject:travelTimeDisplay];
