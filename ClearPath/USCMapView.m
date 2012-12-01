@@ -80,7 +80,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         
         // set background color
         self.backgroundColor = [UIColor colorWithR:248 G:228 B:204 A:1];
-//        self.backgroundColor = [UIColor lightGrayColor];
+        self.backgroundColor = [UIColor lightGrayColor];
         
         // mapView
         self.mapView = [[MKMapView alloc] initWithFrame:CGRectZero];
@@ -138,7 +138,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     [self.user sizeToFit];
     self.user.center = [self.mapView convertCoordinate:self.mapView.userLocation.coordinate toPointToView:self];
     self.user.center = self.mapView.center;
-    [self addSubview:self.user];
+//    [self addSubview:self.user];
     
     // set searchBar
     self.searchBar.frame = CGRectMake(5.0f, 5.0f, CGRectGetMaxX(self.bounds)-10.0f, 30);
@@ -265,8 +265,8 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     start.title = @"Start";
     end.title = @"End";
     
-//    NSArray *annotations = [[NSArray alloc] initWithObjects:start, end, nil];
-//    [self.mapView addAnnotations:annotations];
+    NSArray *annotations = [[NSArray alloc] initWithObjects:start, end, nil];
+    [self.mapView addAnnotations:annotations];
     
     // Zoom window to fit annotations
     CLLocationCoordinate2D center;
@@ -314,7 +314,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         self.polylineView = [[MKPolylineView alloc] initWithPolyline:(MKPolyline *)overlay];
         self.polylineView.fillColor = [UIColor colorWithR:143 G:188 B:219 A:1];
         self.polylineView.strokeColor = [UIColor colorWithR:143 G:188 B:219 A:1];
-        self.polylineView.lineWidth = 5;
+        self.polylineView.lineWidth = 15;
         
         return self.polylineView;
     }
@@ -333,7 +333,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         annotationView = [[MKAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:AnnotationViewID];
     }
     
-    annotationView.image = [UIImage imageNamed:@"Button_medium.png"];
+    annotationView.image = [UIImage imageNamed:@"Button_small.png"];
     annotationView.annotation = annotation;
     
     return annotationView;

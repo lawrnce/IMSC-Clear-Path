@@ -40,7 +40,7 @@
         // set delegate
         [self setDelegate:delegate];
         
-        self.backgroundColor = [UIColor colorWithR:102 G:102 B:102 A:0.1f];
+        self.backgroundColor = [UIColor colorWithR:102 G:102 B:102 A:0.5f];
         
         self.route = r;
         
@@ -129,7 +129,10 @@
     time.frame = CGRectMake(self.title.frame.origin.x + 22.0f, address.frame.origin.y + CGRectGetMaxY(address.bounds),
                               CGRectGetMaxX(time.bounds), CGRectGetMaxY(time.bounds));
     time.frame = CGRectIntegral(time.frame);
-//    [self addSubview:time];
+    [self addSubview:time];
+    
+    self.sideButton.center = CGPointMake(CGRectGetMaxX(self.bounds) * 0.9f, CGRectGetMidY(self.bounds));
+    [self addSubview:self.sideButton];
 }
 
 - (void)makeShadowForLabel:(UILabel *)label;
