@@ -176,8 +176,6 @@
     {
          NSLog(@"Touch Ended");
         
-        
-    
     }
 }
 

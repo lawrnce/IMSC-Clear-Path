@@ -43,6 +43,9 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @property (nonatomic, strong) UILabel *label;
 @property (nonatomic, strong) UIButton *user;
 
+@property (nonatomic, strong) NSArray *annotations;
+@property (nonatomic, strong) USCAnnotation *userAnnotation;
+
 @end
 
 @implementation USCMapView
@@ -72,6 +75,8 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @synthesize resultInformation = _resultInformation;
 @synthesize startNode = _startNode;
 @synthesize user = _user;
+@synthesize annotations = _annotations;
+@synthesize userAnnotation = _userAnnotation;
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -87,6 +92,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         [self addSubview:self.mapView];                                 // add mapView to underlay view
         self.mapView.delegate = self;
     
+        self.mapView.showsUserLocation = YES;
         self.mapView.userInteractionEnabled = YES;
         [self enableFullTouch:NO forMap:self.mapView];                      //disable all touch events
 
@@ -124,21 +130,9 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.mapView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.bounds)*3, CGRectGetMaxY(self.bounds)*3);
     self.mapView.center = self.center;
     
-    
     // center map
     if (!self.showingPolyline)
-        [self centerMapTo:self.mapView.userLocation.coordinate withTrackingMode:MKUserTrackingModeFollow withDuration:2.0f];
-    
-    // create overlay for map
-    
-    
-    // user place button
-    self.user = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.user setBackgroundImage:[UIImage imageNamed:@"Button_medium.png"] forState:UIControlStateNormal];
-    [self.user sizeToFit];
-    self.user.center = [self.mapView convertCoordinate:self.mapView.userLocation.coordinate toPointToView:self];
-    self.user.center = self.mapView.center;
-//    [self addSubview:self.user];
+        [self centerMapTo:self.mapView.userLocation.coordinate withTrackingMode:MKUserTrackingModeFollow withDuration:0.3f];
     
     // set searchBar
     self.searchBar.frame = CGRectMake(5.0f, 5.0f, CGRectGetMaxX(self.bounds)-10.0f, 30);
@@ -162,13 +156,24 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     
     _state.showingResults = NO;
     _state.showingPolyline = NO;
+}
 
+- (void)viewDidLoad;
+{
+    self.userAnnotation = [[USCAnnotation alloc] init];
+    self.userAnnotation.coordinate = [self.mapView convertPoint:self.mapView.center toCoordinateFromView:self.mapView];
+    
+    self.userAnnotation.title = @"user";
+    
+    [self.mapView addAnnotation:self.userAnnotation];
 }
 
 #pragma mark - ResultsView Methods
 
 - (void)showSearchResultsForPoints:(NSArray *)placemarks;
 {
+    [self.mapView removeAnnotations:self.mapView.annotations];
+    
     // init the results view
     self.resultsView = [[USCResults alloc] initWithFrame:CGRectZero withPlacemarks:placemarks delegate:self];
     self.resultsView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.bounds), CGRectGetMaxY(self.bounds));
@@ -183,7 +188,6 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     [UIView animateWithDuration:0.3f animations:^{
         self.mapView.alpha = 0.5f;
     }];
-    
     
     // change flags
     self.showingResults = YES;
@@ -230,7 +234,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.showingPolyline = NO;
     self.showingInformtaion = YES;
     
-     self.searchBar.frame = CGRectMake(0, 0, 30, 30);
+    self.searchBar.frame = CGRectMake(0, 0, 30, 30);
 }
 
 - (void)showPolylineForRoute:(USCRoute *)route;
@@ -256,17 +260,23 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 
 - (void)showAnnotationsForRoute:(USCRoute *)route;
 {
+    [self.mapView removeAnnotations:self.mapView.annotations];
+    
     USCAnnotation *start = [[USCAnnotation alloc] init];
     start.coordinate = [[route.coordinates objectAtIndex:0] coordinate];
     
     USCAnnotation *end = [[USCAnnotation alloc] init];
     end.coordinate = [[route.coordinates lastObject] coordinate];
     
-    start.title = @"Start";
-    end.title = @"End";
+    USCAnnotation *user = [[USCAnnotation alloc] init];
+    user.coordinate = self.mapView.userLocation.coordinate;
     
-    NSArray *annotations = [[NSArray alloc] initWithObjects:start, end, nil];
-    [self.mapView addAnnotations:annotations];
+    start.title = @"start";
+    end.title = @"end";
+    user.title = @"userSmall";
+    
+    self.annotations = [[NSArray alloc] initWithObjects:start, end, user, nil];
+    [self.mapView addAnnotations:self.annotations];
     
     // Zoom window to fit annotations
     CLLocationCoordinate2D center;
@@ -314,7 +324,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         self.polylineView = [[MKPolylineView alloc] initWithPolyline:(MKPolyline *)overlay];
         self.polylineView.fillColor = [UIColor colorWithR:143 G:188 B:219 A:1];
         self.polylineView.strokeColor = [UIColor colorWithR:143 G:188 B:219 A:1];
-        self.polylineView.lineWidth = 15;
+        self.polylineView.lineWidth = 10;
         
         return self.polylineView;
     }
@@ -333,16 +343,34 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         annotationView = [[MKAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:AnnotationViewID];
     }
     
-    annotationView.image = [UIImage imageNamed:@"Button_small.png"];
+    // if annotation is user
+    if ([[annotation title] isEqualToString:@"user"])
+    {
+        annotationView.image = [UIImage imageNamed:@"prof_image_80x80.png"];
+        annotationView.canShowCallout = YES;
+    }
+
+    if ([[annotation title] isEqualToString:@"userSmall"])
+    {
+        annotationView.image = [UIImage imageNamed:@"prof_image_40x40.png"];
+    }
+    
+    // if annotation is start
+    if ([[annotation title] isEqualToString:@"start"] || [[annotation title] isEqualToString:@"end"])
+    {
+        annotationView.image = [UIImage imageNamed:@"Button_small.png"];
+    }
+         
     annotationView.annotation = annotation;
+   
     
     return annotationView;
 }
 
 -(void)mapView:(MKMapView *)mapView didAddAnnotationViews:(NSArray *)views
 {
-    MKAnnotationView *ulv = [mapView viewForAnnotation:mapView.userLocation];
-    ulv.hidden = YES;
+//    MKAnnotationView *ulv = [mapView viewForAnnotation:mapView.userLocation];
+//    ulv.hidden = YES;
 }
 
 #pragma mark - PolyLine and Annotation Methods
@@ -520,6 +548,9 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         // set alpha back
         self.mapView.alpha = 1.0f;
         
+        // bring back user image
+        [self.mapView addAnnotations:self.mapView.annotations];
+        
         // set BOOLS
         [self enableFullTouch:NO forMap:self.mapView];
         self.showingResults = NO;
@@ -531,6 +562,9 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     {
         // remove polyline
         [self.polylineView removeFromSuperview];
+        
+        // remove annotations
+        [self.mapView removeAnnotations:self.mapView.annotations];
         
         // remove backButton
         [self.backButton removeFromSuperview];
@@ -592,13 +626,13 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 {
     [UIView animateWithDuration:time animations:^{
         
-        MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(coordinate, METERS_PER_MILE*1.5f, METERS_PER_MILE*1.5f);
+        MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(coordinate, METERS_PER_MILE*2.5f, METERS_PER_MILE*1.5f);
         MKCoordinateRegion adjustRegion = [self.mapView regionThatFits:viewRegion];
         [self.mapView setRegion:adjustRegion animated:YES];
         
         [self.mapView setUserTrackingMode:mode animated:YES];
+        
     }];
-    
 }
 
 - (void)enableFullTouch:(BOOL)flag forMap:(MKMapView *)mapView;
@@ -756,7 +790,4 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         }];
     }
 }
-
-
-
 @end

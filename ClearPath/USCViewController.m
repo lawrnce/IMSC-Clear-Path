@@ -62,6 +62,8 @@
     
     self.locationPoints = [[NSMutableArray alloc] init];
     
+    [self.mapView viewDidLoad];
+    
 }
 
 - (void)viewDidAppear:(BOOL)animated

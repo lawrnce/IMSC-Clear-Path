@@ -37,6 +37,14 @@
         
         [self addSubview:title];
         
+        UIImage *sideImage = [UIImage imageNamed:@"Button_small.png"];
+        UIImageView *sideImageView = [[UIImageView alloc] initWithImage:sideImage];
+        [self addSubview:sideImage];
+        
+        UIImage *trashImage = [UIImage imageNamed:@"Trash_small.png"];
+        
+        UIImage *arrow = [UIImage imageNamed:@"FArrow_small"];
+        
     }
     return self;
 }

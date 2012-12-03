@@ -70,5 +70,6 @@
 - (void)enableFullTouch:(BOOL)flag forMap:(MKMapView *)mapView;
 - (void)searchShowing:(BOOL)flag;
 - (void)showSearchResultsForPoints:(NSArray *)placemarks;
+- (void)viewDidLoad;
 
 @end
