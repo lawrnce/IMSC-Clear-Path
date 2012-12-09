@@ -21,6 +21,7 @@
 @property (nonatomic, strong) NSString *address;
 @property (nonatomic, strong) NSString *travelTime;
 @property (nonatomic, strong) NSNumber *travelTimeNumber;
+@property (nonatomic, strong) NSNumber *distance;
 
 -(void)setAttributesFromString:(NSString *)rawString;
 

@@ -52,11 +52,22 @@
         [routeCoordinates addObject:[[CLLocation alloc] initWithLatitude:location.latitude longitude:location.longitude]];
     }
     
+    CLLocationDistance d = 0;
     
+    // Calculate the distance
+    for (int i = 0; i < [routeCoordinates count] - 1; i++)
+    {
+        d += [[routeCoordinates objectAtIndex:i] distanceFromLocation:[routeCoordinates objectAtIndex:i+1]];
+    }
     
+    d *= .0006214f;
+    
+    NSNumber *distance = [NSNumber numberWithDouble:d];
     NSNumber *travelTime = [numberFormatter numberFromString:[confrimationTags objectAtIndex:0]];
-    NSString *travelTimeDisplay = [NSString stringWithFormat:@"%.0f Minutes    50 Miles", [travelTime doubleValue]];
+    NSString *travelTimeDisplay = [NSString stringWithFormat:@"%.0f Minutes    %.0f Miles", [travelTime doubleValue], d];
     
+    // set distance to array
+    [routeCoordinates addObject:distance];
     // set string time into array
     [routeCoordinates addObject:travelTimeDisplay];
     // set number time into array

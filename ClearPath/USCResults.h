@@ -43,6 +43,7 @@
 @property (nonatomic, strong) USCResultsScrollView *pagesScrollView;
 @property (nonatomic, strong) USCResultsPageControl *pageControl;
 @property (nonatomic, strong) NSArray *pages;
+@property (nonatomic) BOOL hasStartNode;
 
 -(void)layoutLauncher;
 -(void)layoutLauncherAnimated:(BOOL)animated;

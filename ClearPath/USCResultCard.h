@@ -34,6 +34,9 @@
 @property (nonatomic, strong) USCRoute *route;
 @property (nonatomic, strong) UILabel *title;
 @property (nonatomic, strong) UILabel *subtitle;
+@property (nonatomic, strong) UILabel *time;
+@property (nonatomic, strong) UIButton *sideButton;
+@property (nonatomic, strong) NSString *timeString;
 
 - (id)initWithFrame:(CGRect)frame withRoute:(USCRoute *)point delegate:(id<USCResultCardDelegate>)delegate withIndex:(int)index;
 

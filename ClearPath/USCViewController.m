@@ -12,12 +12,13 @@
 #import "USCMapView.h"
 #import "NSDate+RoundTime.h"
 #import "USCRoute.h"
+#import "USCTimeSlider.h"
 
 #define kSCALE 1
 #define kLAT 34.025454
 #define kLONG -118.291554
 
-@interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, RKRequestDelegate>
+@interface USCViewController () <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, RKRequestDelegate, USCTimeSlider>
 
 // variable properties
 @property (nonatomic, strong) CLLocationManager *locationManager;
@@ -32,6 +33,10 @@
 @property (nonatomic, strong) NSMutableArray *nameAdressPassing;
 
 @property (nonatomic, strong) NSMutableArray *locationPoints;
+@property (nonatomic, strong) UIView *loadingView;
+
+
+@property (nonatomic) BOOL timeChanged;
 
 @end
 
@@ -49,6 +54,10 @@
 
 @synthesize locationPoints = _locationPoints;
 
+@synthesize loadingView = _loadingView;
+
+@synthesize timeChanged;
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -63,15 +72,19 @@
     self.locationPoints = [[NSMutableArray alloc] init];
     
     [self.mapView viewDidLoad];
-    
+    self.timeChanged = NO;
 }
 
 - (void)viewDidAppear:(BOOL)animated
 {
     // set delegate
-    self.mapView.recentView.tableView.dataSource = self;
-    self.mapView.recentView.tableView.delegate = self;
     self.mapView.searchBar.delegate = self;
+    self.mapView.timeSlider.delegate = self;
+    
+    // set button targets
+    [self.mapView.recentView.gas addTarget:self action:@selector(gasButton:) forControlEvents:UIControlEventTouchUpInside];
+    [self.mapView.recentView.hospital addTarget:self action:@selector(hospitalButton:) forControlEvents:UIControlEventTouchUpInside];
+    [self.mapView.recentView.food addTarget:self action:@selector(foodButton:) forControlEvents:UIControlEventTouchUpInside];
 }
 
 - (void)viewDidUnload
@@ -116,10 +129,67 @@
      
         NSLog(@"Start Coordinate: %f, %f", self.mapView.startCoordinate.latitude, self.mapView.startCoordinate.longitude);
     
+    // start progress indicator
+    self.loadingView.backgroundColor = [UIColor lightGrayColor];
+    self.loadingView.alpha = 0.5f;
+    
+    
+    [self.view addSubview:self.loadingView];
+    
     return NO;
 }
 
+#pragma mark - Favorities Button handling
+
+-(void)gasButton:(id)sender;
+{
+    [self.mapView closeFavorites];
+    // check start coordinate
+    if (!self.mapView.hasCustomStart)
+        self.mapView.startCoordinate = self.mapView.mapView.userLocation.coordinate;
+    
+    NSLog(@"Start Coordinate: %f, %f", self.mapView.startCoordinate.latitude, self.mapView.startCoordinate.longitude);
+    self.locationPoints = [[NSMutableArray alloc] init];;
+    [self setGasPlacemarks];
+}
+
+-(void)hospitalButton:(id)sender;
+{
+    [self.mapView closeFavorites];
+    
+}
+
+-(void)foodButton:(id)sender;
+{
+    [self.mapView closeFavorites];
+    
+}
+
 #pragma mark - Geocoding Methods
+
+- (void)willRouteFrom:(CLLocation *)start To:(CLLocation *)end withTime:(NSDate *)index;
+{
+    self.timeChanged = YES;
+    
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"TimeIndex" ofType:@"plist"];
+    self.timeIndex = [[NSDictionary alloc] initWithContentsOfFile:path];
+    NSString *roundedTime = [index setRoundTimeToString:[index currentTimeRoundedToNearestTimeInterval:15*60]];
+
+    
+        NSLog(@"POKEMON!!! %@",[self.timeIndex valueForKey:roundedTime]);
+    
+    // "34.025454,-118.291554"  Set parameters into dictionary
+    NSDictionary *params = [NSDictionary dictionaryWithObjectsAndKeys:
+                            [NSString stringWithFormat:@"%f,%f", start.coordinate.latitude, start.coordinate.longitude],@"start",
+                            [NSString stringWithFormat:@"%f,%f",end.coordinate.latitude,end.coordinate.longitude],@"end",
+                            [self.timeIndex valueForKey:roundedTime], @"time",
+                            @"False", @"update",
+                            [self receiveDayOfWeek], @"day",
+                            nil];
+    // start restkit
+    [self sendRequests:params];
+}
+
 
 - (void)performGeocode:(id)sender withAddress:(NSString *)address;
 {
@@ -238,25 +308,35 @@
     {
         // Success! Let's take a look at the data
         NSLog(@"Retrieved XML: %@", [response bodyAsString]);
-
-        [[self.locationPoints objectAtIndex:_count] setAttributesFromString:[response bodyAsString]];
         
-        _count++;
-        
-        if(_count == _reference)
+        if (self.timeChanged)
         {
-            NSLog(@"SENT: %@", [[self.locationPoints objectAtIndex:0] name]);
-            
-            
-            //** test
-            for (int i = 0; i < 9; i++)
-            {
-                [self.locationPoints addObject:[self.locationPoints objectAtIndex:0]];
-            }
-            
-            [self.mapView showSearchResultsForPoints:self.locationPoints];
+            USCRoute *newTimeRoute = [[USCRoute alloc] init];
+            [newTimeRoute setAttributesFromString:[response bodyAsString]];
+            [self.mapView showRoute:newTimeRoute];
+            self.timeChanged = NO;
         }
+        else
+        {
+            [[self.locationPoints objectAtIndex:_count] setAttributesFromString:[response bodyAsString]];
             
+            _count++;
+            
+            if(_count == _reference)
+            {
+//                NSLog(@"SENT: %@", [[self.locationPoints objectAtIndex:0] name]);
+                
+                
+                //** test
+//                for (int i = 0; i < 9; i++)
+//                {
+//                    [self.locationPoints addObject:[self.locationPoints objectAtIndex:0]];
+//                }
+                
+                [self.mapView showSearchResultsForPoints:self.locationPoints];
+                [self.loadingView removeFromSuperview];
+            }
+        }
     }
 }
 
@@ -300,17 +380,7 @@
         cell.textLabel.font = [UIFont fontWithName:@"Helvetica-Light" size:25];
         cell.backgroundView.backgroundColor = [UIColor blueColor];
         cell.frame = CGRectIntegral(cell.frame);
-        
     }
-    
-    //    // Configure the cell...
-    //    NSString *continent = [self tableView:tableView titleForHeaderInSection:indexPath.section];
-    //    NSString *country = [[self.favAndRecent valueForKey:continent] objectAtIndex:indexPath.row];
-    //
-    //    cell.textLabel.text = country;
-    //
-    //    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-    
     return cell;
 }
 
@@ -341,6 +411,74 @@
 {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     NSLog(@"yo");
+}
+
+- (void)setGasPlacemarks;
+{
+//    NSMutableArray *locations = [[NSMutableArray alloc] init];
+    
+    _reference = 1;
+    _count = 0;
+    
+    // HARD CODE THIS SHIT
+    USCRoute *place1 = [[USCRoute alloc] init];
+    place1.name = [NSString stringWithFormat:@"Mobil"];
+    place1.address = [NSString stringWithFormat:@"2620 South Figueroa Street"];
+    [self.locationPoints addObject:place1];
+    CLLocation *location1 = [[CLLocation alloc] initWithLatitude:34.02773 longitude:-118.27612];
+    [self navigateTo:location1 forTimeIndex:[self receiveRoundedTime] forDay:[self receiveDayOfWeek]];
+    
+    
+    // OTHER
+    
+    USCRoute *place2 = [[USCRoute alloc] init];
+    place2.name = [NSString stringWithFormat:@"LS Union 76"];
+    place2.address = [NSString stringWithFormat:@"1403 West Adams Boulevard"];
+    place2.travelTime = [NSString stringWithFormat:@"7 Minutes    2 Miles"];
+    [self.locationPoints addObject:place2];
+    
+    USCRoute *place3 = [[USCRoute alloc] init];
+    place3.name = [NSString stringWithFormat:@"Amin's Oil"];
+    place3.address = [NSString stringWithFormat:@"2620 South Figueroa Street"];
+    place3.travelTime = [NSString stringWithFormat:@"10 Minutes    3 Miles"];
+    [self.locationPoints addObject:place3];
+    
+    USCRoute *place4 = [[USCRoute alloc] init];
+    place4.name = [NSString stringWithFormat:@"Normandie"];
+    place4.address = [NSString stringWithFormat:@"2217 South Normandie Avenue"];
+    place4.travelTime = [NSString stringWithFormat:@"13 Minutes    3 Miles"];
+    [self.locationPoints addObject:place4];
+    
+    USCRoute *place5 = [[USCRoute alloc] init];
+    place5.name = [NSString stringWithFormat:@"ARCO"];
+    place5.address = [NSString stringWithFormat:@"2211 South Hoover Street"];
+    place5.travelTime = [NSString stringWithFormat:@"15 Minutes    3 Miles"];
+    [self.locationPoints addObject:place5];
+    
+    USCRoute *place6 = [[USCRoute alloc] init];
+    place6.name = [NSString stringWithFormat:@"Ardicuno"];
+    place6.address = [NSString stringWithFormat:@"1247 Magic Street"];
+    place6.travelTime = [NSString stringWithFormat:@"20 Minutes    5 Miles"];
+    [self.locationPoints addObject:place6];
+    
+    USCRoute *place7 = [[USCRoute alloc] init];
+    place7.name = [NSString stringWithFormat:@"Shell"];
+    place7.address = [NSString stringWithFormat:@"3000 South Figueroa Street"];
+    place7.travelTime = [NSString stringWithFormat:@"25 Minutes    10 Miles"];
+    [self.locationPoints addObject:place7];
+    
+    USCRoute *place8 = [[USCRoute alloc] init];
+    place8.name = [NSString stringWithFormat:@"PF Chang's"];
+    place8.address = [NSString stringWithFormat:@"123 Vermont"];
+    place8.travelTime = [NSString stringWithFormat:@"25 Minutes    8 Miles"];
+    [self.locationPoints addObject:place8];
+    
+    USCRoute *place9 = [[USCRoute alloc] init];
+    place9.name = [NSString stringWithFormat:@"Magic"];
+    place9.address = [NSString stringWithFormat:@"2211 Olympic"];
+    place9.travelTime = [NSString stringWithFormat:@"30 Minutes    10 Miles"];
+    [self.locationPoints addObject:place9];
+
 }
 
 @end

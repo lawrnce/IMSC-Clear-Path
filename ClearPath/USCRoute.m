@@ -16,6 +16,7 @@
 @synthesize address = _address;
 @synthesize travelTime = _travelTime;
 @synthesize travelTimeNumber = _travelTimeNumber;
+@synthesize distance = _distance;
 
 -(void)setAttributesFromString:(NSString *)rawString;
 {
@@ -36,9 +37,14 @@
     // pop the back
     [mutableCopy removeLastObject];
     
+    // set distance
+    self.distance = [mutableCopy lastObject];
+    
+    // pop the back
+    [mutableCopy removeLastObject];
+    
     // set the array
     self.coordinates = mutableCopy;
-    
 }
 
 @end

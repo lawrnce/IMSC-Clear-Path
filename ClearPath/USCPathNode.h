@@ -16,4 +16,6 @@
 - (CLLocationCoordinate2D)coordinate;
 - (NSString *)name;
 
+@property (nonatomic, strong) UIButton *trash;
+
 @end

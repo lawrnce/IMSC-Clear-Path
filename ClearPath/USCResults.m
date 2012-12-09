@@ -24,14 +24,14 @@ static const int maxPageCount = 6;
 /* iPhone */
 static const int maxItemsPageCount = 3;
 
-static const int portraitItemWidth = 300;
-static const int portraitItemHeight = 100;
+static const int portraitItemWidth = 310;
+static const int portraitItemHeight = 75;
 static const int portraitColumnCount = 1;
 static const int portraitRowCount = 3;
-static const CGFloat portraitItemXStart = 10;
-static const CGFloat portraitItemYStart = 60;
+static const CGFloat portraitItemXStart = 5;
+static const CGFloat portraitItemYStart = 80;
 static const CGFloat portraitXPadding = 0;
-static const CGFloat portraitYPadding = 30;
+static const CGFloat portraitYPadding = 45;
 
 @interface USCResults () <USCResultCardDelegate>
 
@@ -49,6 +49,7 @@ static const CGFloat portraitYPadding = 30;
 @synthesize pages = _pages;
 @synthesize itemHoldTimer = _itemHoldTimer;
 @synthesize movePagesTimer = _movePagesTimer;
+@synthesize hasStartNode = _hasStartNode;
 
 #pragma mark - View lifecycle
 
@@ -70,6 +71,10 @@ static const CGFloat portraitYPadding = 30;
         
         // for index
         int index = 1;
+        
+        if (self.hasStartNode) {
+            index++;
+        }
         
         // set placemarks to the pages
         for (USCRoute *route in placemarks)
@@ -205,9 +210,13 @@ static const CGFloat portraitYPadding = 30;
     // move card to top
     [UIView animateWithDuration:0.3f animations:^{
     
+        resultCard.time.hidden = YES;
+        
+        resultCard.sideButton.hidden = YES;
+        
         CGPoint point = resultCard.center;
         
-        point.y = (CGRectGetMidY(self.bounds) * 0.27f);
+        point.y = (CGRectGetMidY(self.bounds) * 0.35f);
         
         resultCard.center = point;
     
@@ -226,6 +235,8 @@ static const CGFloat portraitYPadding = 30;
     // move card to top
     [UIView animateWithDuration:0.3f animations:^{
         
+        _selectedResultCard.time.hidden = NO;
+        _selectedResultCard.sideButton.hidden = NO;
         _selectedResultCard.center = _selectedOrginalPosition;
         
     }];

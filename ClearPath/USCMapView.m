@@ -8,6 +8,7 @@
 
 #import "USCMapView.h"
 #import "USCResults.h"
+#import "USCFavorites.h"
 
 #import "CAAnimation+SpecialAnimations.h"
 #import "USCResultCard.h"
@@ -30,12 +31,17 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @property (nonatomic) CGPoint recentStart;
 @property (nonatomic) CGPoint recentStop;
 
+@property (nonatomic) CGPoint favoriteStart;
+@property (nonatomic) CGPoint favoriteStop;
+
 @property (nonatomic, strong) MKPolyline *polyline;
 @property (nonatomic, strong) NSArray *results;
 
 @property (nonatomic) BOOL showingResults;
 @property (nonatomic) BOOL showingPolyline;
 @property (nonatomic) BOOL showingInformtaion;
+
+@property (nonatomic) BOOL showingFavorities;
 
 @property (nonatomic, strong) UIButton *backButton;
 @property (nonatomic, strong) USCResultInformation *resultInformation;
@@ -45,10 +51,30 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 
 @property (nonatomic, strong) NSArray *annotations;
 @property (nonatomic, strong) USCAnnotation *userAnnotation;
+@property (nonatomic, strong) UILabel *nameDisplay;
+@property (nonatomic, strong) UILabel *timeDisplay;
+
+@property (nonatomic, strong) UIScrollView *help;
+
+@property (nonatomic) BOOL canShowRecents;
+@property (nonatomic) BOOL canShowFavorites;
+@property (nonatomic) BOOL hasStartNode;
+@property (nonatomic) BOOL timeChanged;
+
+@property (nonatomic, strong) UIButton *helpButton;
+@property (nonatomic) BOOL showingHelp;
+
+
+@property (nonatomic, strong) UIImageView *favoriteImage;
 
 @end
 
 @implementation USCMapView
+
+@synthesize helpButton = _helpButton;
+@synthesize showingHelp = _showingHelp;
+
+@synthesize favoriteImage = _favoriteImage;
 
 @synthesize delegate = _delegate;
 
@@ -60,16 +86,26 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @synthesize panGestureRecognizer = _panGestureRecognizer;
 @synthesize recentStart = _recentStart;
 @synthesize recentStop = _recentStop;
+
+@synthesize favoriteStart = _favoriteStart;
+@synthesize favoriteStop = _favoriteStop;
+
 @synthesize recentView = _recentView;
+@synthesize favoritesView = _favoritesView;
 @synthesize searchBar = _searchBar;
 @synthesize startCoordinate = _startCoordinate;
 @synthesize endCoordinate = _endCoordinate;
 @synthesize hasCustomStart;
 
 @synthesize results = _results;
+@synthesize help = _help;
 
+@synthesize showingFavorities = _showingFavorities;
 @synthesize showingResults = _showingResults;
 @synthesize showingPolyline = _showingPolyline;
+@synthesize canShowRecents = _canShowRecents;
+@synthesize canShowFavorites = _canShowFavorites;
+@synthesize hasStartNode = _hasStartNode;
 
 @synthesize backButton = _backButton;
 @synthesize resultInformation = _resultInformation;
@@ -77,6 +113,12 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 @synthesize user = _user;
 @synthesize annotations = _annotations;
 @synthesize userAnnotation = _userAnnotation;
+
+@synthesize timeSlider = _timeSlider;
+@synthesize timeChanged = _timeChanged;
+
+@synthesize nameDisplay = _nameDisplay;
+@synthesize timeDisplay = _timeDisplay;
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -110,12 +152,35 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         // backButton
         self.backButton = [UIButton buttonWithType:UIButtonTypeCustom];
         self.backButton.userInteractionEnabled = YES;
-        [self.backButton setBackgroundImage:[UIImage imageNamed:@"close_small.png"] forState:UIControlStateNormal];
+        [self.backButton setBackgroundImage:[UIImage imageNamed:@"BArrow_small.png"] forState:UIControlStateNormal];
         [self.backButton sizeToFit];
         [self.backButton addTarget:self action:@selector(_backButton:) forControlEvents:UIControlEventTouchUpInside];
         
         // set BOOLs
         self.hasCustomStart = NO;
+        self.canShowRecents = YES;
+        self.canShowFavorites = YES;
+        self.hasStartNode = NO;
+        self.timeChanged = NO;
+        self.showingHelp = NO;
+        
+        // time slider
+        self.timeSlider = [[USCTimeSlider alloc] initWithFrame:CGRectZero];
+        self.timeDisplay = [[UILabel alloc] initWithFrame:CGRectZero];
+        self.nameDisplay = [[UILabel alloc] initWithFrame:CGRectZero];
+        
+        
+        // help view
+        self.help = [[UIScrollView alloc] initWithFrame:CGRectZero];
+        UIImageView *helpImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"final.png"]];
+//        [self.help sizeToFit];
+        [self.help addSubview:helpImageView];
+        self.help.contentSize = CGSizeMake(CGRectGetMaxX(self.help.bounds), CGRectGetMaxY(helpImageView.bounds));
+        self.help.pagingEnabled = YES;
+        
+        // favorite image
+        self.favoriteImage = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"gfavorites.png"]];
+        
     }
     return self;
 }
@@ -125,6 +190,11 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 - (void)layoutSubviews;
 {
     [super layoutSubviews];
+    
+    // set help
+    self.help.frame = CGRectMake(0, 0, 320, 480);
+    self.help.center = CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMaxY(self.bounds) + CGRectGetMidY(self.help.bounds));
+    [self addSubview:self.help];
     
     // set map
     self.mapView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.bounds)*3, CGRectGetMaxY(self.bounds)*3);
@@ -138,6 +208,11 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.searchBar.frame = CGRectMake(5.0f, 5.0f, CGRectGetMaxX(self.bounds)-10.0f, 30);
     _searchBarPosition = CGPointMake(self.searchBar.center.x, self.searchBar.center.y);
     
+    // set favorites image
+    self.favoriteImage.center = CGPointMake(CGRectGetMaxX(self.bounds) - CGRectGetMidX(self.favoriteImage.bounds) - 5,
+                                            CGRectGetMaxY(self.searchBar.bounds) + CGRectGetMidY(self.favoriteImage.bounds) + 10.0f);
+    [self addSubview:self.favoriteImage];
+    
     // set recentStart and recentStop
     self.recentStart = CGPointMake(CGRectGetMaxX(self.bounds)*(1.5f), CGRectGetMidY(self.bounds));
     self.recentStop = CGPointMake(CGRectGetMaxX(self.bounds)*(.55f), CGRectGetMidY(self.bounds));
@@ -146,16 +221,71 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.recentView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.bounds), CGRectGetMaxY(self.bounds)*.95f);
     self.recentView.center = self.recentStart;
     
+    // favorites view
+    self.favoritesView.frame = CGRectMake(0, 0, CGRectGetMaxX(self.bounds), CGRectGetMaxY(self.bounds)*.95f);
+    self.favoritesView.center = self.favoriteStart;
+    
     // backButton
-    self.backButton.center = CGPointMake(CGRectGetMaxX(self.bounds) - CGRectGetMidX(self.backButton.bounds), CGRectGetMaxY(self.bounds) - CGRectGetMidY(self.backButton.bounds));
+    self.backButton.center = CGPointMake(CGRectGetMidX(self.backButton.bounds), CGRectGetMaxY(self.bounds) - CGRectGetMidY(self.backButton.bounds));
+    
+    // time slider
+    self.timeSlider.frame = CGRectMake(0, 0, 250, 75);
+    self.timeSlider.center = CGPointMake(CGRectGetMidX(self.bounds),
+                                         CGRectGetMaxY(self.bounds) - CGRectGetMidY(self.timeSlider.bounds));
+    
+    // name display
+    self.nameDisplay.backgroundColor = [UIColor colorWithR:102 G:102 B:102 A:0.4f];
+    self.nameDisplay.textColor = [UIColor whiteColor];
+    self.nameDisplay.font = [UIFont fontWithName:@"Helvetica-Bold" size:40];
+   
+    // time display
+    self.timeDisplay.backgroundColor = [UIColor colorWithR:102 G:102 B:102 A:0.4f];
+    self.timeDisplay.textColor = [UIColor whiteColor];
+    self.timeDisplay.font = [UIFont fontWithName:@"Helvetica-Bold" size:25];
     
     _limitedPanMapFlags.neutral = YES;
     _limitedPanMapFlags.panning = NO;
     _limitedPanMapFlags.showingRecents = NO;
+    self.showingFavorities = NO;
     _limitedPanMapFlags.showingSearch = YES;
     
     _state.showingResults = NO;
     _state.showingPolyline = NO;
+    
+    
+    // Help Button
+    self.helpButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [self.helpButton setBackgroundImage:[UIImage imageNamed:@"Button_small"] forState:UIControlStateNormal];
+    [self.helpButton setTitle:[NSString stringWithFormat:@"?"] forState:UIControlStateNormal];
+    [self.helpButton sizeToFit];
+    self.helpButton.center = CGPointMake(CGRectGetMaxX(self.bounds) - CGRectGetMidX(self.helpButton.bounds), CGRectGetMaxY(self.bounds) - CGRectGetMidY(self.helpButton.bounds));
+    [self addSubview:self.helpButton];
+    [self.helpButton addTarget:self action:@selector(helpButton:) forControlEvents:UIControlEventTouchUpInside];
+}
+
+- (void)helpButton:(id)sender;
+{
+    if (self.showingHelp)
+    {
+        [UIView animateWithDuration:0.3f animations:^{
+        
+            self.help.center = CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMaxY(self.bounds) + CGRectGetMidY(self.help.bounds));
+            self.favoriteImage.alpha = 1.0f;
+        }];
+        
+        self.showingHelp = NO;
+    }
+    else if (!self.showingHelp)
+    {
+
+        [UIView animateWithDuration:0.3f animations:^{
+        
+            self.help.center = self.center;
+            self.favoriteImage.alpha = 0;
+        }];
+        
+        self.showingHelp = YES;
+    }
 }
 
 - (void)viewDidLoad;
@@ -168,7 +298,57 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     [self.mapView addAnnotation:self.userAnnotation];
 }
 
+- (void)showRoute:(USCRoute *)route;
+{
+    [self.polylineView removeFromSuperview];
+    [self.timeSlider removeFromSuperview];
+    [self.timeDisplay removeFromSuperview];
+    [self.nameDisplay removeFromSuperview];
+    NSLog(@"MAGIC POKEMON");
+    self.timeChanged = YES;
+    [self _backButton:NULL];
+    [self showPolylineForRoute:route];
+    [self showAnnotationsForRoute:route withZoom:NO];
+    [self addSubview:self.timeSlider];
+    [self addSubview:self.nameDisplay];
+    self.timeChanged = NO;
+    
+    // time display
+    [self.timeDisplay setText:route.travelTime];
+    [self.timeDisplay sizeToFit];
+    self.timeDisplay.frame = CGRectIntegral(self.timeDisplay.frame);
+    [self addSubview:self.timeDisplay];
+}
+
 #pragma mark - ResultsView Methods
+
+- (void)closeFavorites;
+{
+    // mapAnimation
+    CAAnimation *mapAnimation = [CAAnimation rubberBandAnimationFromPosition:[self.mapView convertCoordinate:self.mapView.userLocation.coordinate toPointToView:self] toPosition:_startPosition duration:0.7f];
+    
+    // Reset anchor point to default (since we'll be setting the position)
+//    gesture.view.layer.anchorPoint = CGPointMake(0.5f, 0.5f);
+    
+    // Apply the rubber band animation
+    [self.mapView.layer addAnimation:mapAnimation forKey:kUSCRubberBandAnimationKey];
+    [self enableFullTouch:NO forMap:self.mapView];
+    
+    self.mapView.center = self.center;
+    
+    // exit out of favorites view
+    [UIView animateWithDuration:0.2f animations:^{
+        
+        self.recentView.center = CGPointMake(CGRectGetMaxX(self.bounds)*(1.5f), CGRectGetMaxY(self.bounds)*(.5f));
+        self.recentView.alpha = 0;
+        self.mapView.alpha = 1.0f;
+        [self searchBarPositionHidden:NO];
+        
+        _limitedPanMapFlags.showingRecents = NO;
+        _limitedPanMapFlags.showingSearch = NO;
+        
+    }];
+}
 
 - (void)showSearchResultsForPoints:(NSArray *)placemarks;
 {
@@ -193,9 +373,15 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.showingResults = YES;
     self.showingPolyline = NO;
     self.showingInformtaion = NO;
+    self.canShowRecents = NO;
+    self.canShowFavorites = NO;
     
     // add back button
     [self addSubview:self.backButton];
+    
+    [self.helpButton removeFromSuperview];
+    
+    self.favoriteImage.alpha = 0;
 }
 
 #pragma mark - Result View Delegate Methods
@@ -203,11 +389,34 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
 - (void)willRouteTo:(USCRoute *)route;
 {
     [self showPolylineForRoute:route];
-    [self showAnnotationsForRoute:route];
+    [self showAnnotationsForRoute:route withZoom:YES];
+    [self addSubview:self.timeSlider];
+    
+    // name display
+    [self.nameDisplay setText:route.name];
+    [self.nameDisplay sizeToFit];
+    self.nameDisplay.frame = CGRectIntegral(self.nameDisplay.frame);
+    self.nameDisplay.center = CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMidY(self.nameDisplay.bounds) * 1.25f );
+    [self addSubview:self.nameDisplay];
+    
+    // time display
+    [self.timeDisplay setText:route.travelTime];
+    [self.timeDisplay sizeToFit];
+    self.timeDisplay.center = CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMaxY(self.nameDisplay.bounds) + CGRectGetMaxY(self.timeDisplay.bounds));
+    self.timeDisplay.frame = CGRectIntegral(self.timeDisplay.frame);
+    [self addSubview:self.timeDisplay];
 }
 
 - (void)willDisplayInformationForCard:(USCResultCard *)card;
 {
+    USCAnnotation *start = [[USCAnnotation alloc] init];
+    start.coordinate = [[card.route.coordinates lastObject] coordinate];
+    
+    start.title = @"start";
+    
+    self.annotations = [[NSArray alloc] initWithObjects:start, nil];
+    [self.mapView addAnnotations:self.annotations];
+    
     // move searchbar off screen
     self.searchBar.hidden = YES;
     
@@ -223,6 +432,25 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.resultInformation.frame = CGRectMake(0, 0, CGRectGetMidX(self.bounds), CGRectGetMidY(self.bounds));
     self.resultInformation.center = self.center;
     
+    if (self.hasStartNode)
+    {
+        self.resultInformation.start.userInteractionEnabled = NO;
+        self.resultInformation.start.alpha = 0.5f;
+        
+        // move card to top
+        [UIView animateWithDuration:0.3f animations:^{
+            
+            _startNodePosition = self.startNode.center;
+            
+            CGPoint point = self.startNode.center;
+            
+            point.y = (CGRectGetMidY(self.startNode.bounds) * 1.3f);
+            
+            self.startNode.center = point;
+            
+        }];
+    }
+    
     [self addSubview:self.resultInformation];
     
     // set button targets
@@ -235,6 +463,8 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.showingInformtaion = YES;
     
     self.searchBar.frame = CGRectMake(0, 0, 30, 30);
+    
+    [self enableFullTouch:NO forMap:self.mapView];                      //disable all touch events
 }
 
 - (void)showPolylineForRoute:(USCRoute *)route;
@@ -255,10 +485,13 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     
     NSLog(@"YESSSSSSSSS!!! %@", route.name);
     
+    self.timeSlider.start = [route.coordinates objectAtIndex:0];
+    self.timeSlider.end = [route.coordinates lastObject];
+    
     _state.showingPolyline = YES;
 }
 
-- (void)showAnnotationsForRoute:(USCRoute *)route;
+- (void)showAnnotationsForRoute:(USCRoute *)route withZoom:(BOOL)flag;
 {
     [self.mapView removeAnnotations:self.mapView.annotations];
     
@@ -278,18 +511,22 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.annotations = [[NSArray alloc] initWithObjects:start, end, user, nil];
     [self.mapView addAnnotations:self.annotations];
     
-    // Zoom window to fit annotations
-    CLLocationCoordinate2D center;
-    CLLocationDistance distance;
-    
-    center.latitude = (start.coordinate.latitude + end.coordinate.latitude) / 2;
-    center.longitude = (start.coordinate.longitude + end.coordinate.longitude) / 2;
-    
-    distance = [[route.coordinates objectAtIndex:0] distanceFromLocation:[route.coordinates lastObject]];
-    
-    MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(center, distance*2.75f, distance*2.75f);
-    MKCoordinateRegion adjustRegion = [self.mapView regionThatFits:viewRegion];
-    [self.mapView setRegion:adjustRegion animated:YES];
+    if (flag)
+    {
+        // Zoom window to fit annotations
+        CLLocationCoordinate2D center;
+        CLLocationDistance distance;
+        
+        center.latitude = (start.coordinate.latitude + end.coordinate.latitude) / 2;
+        center.longitude = (start.coordinate.longitude + end.coordinate.longitude) / 2;
+        
+        distance = [[route.coordinates objectAtIndex:0] distanceFromLocation:[route.coordinates lastObject]];
+        
+        MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(center, distance*3.25f, distance*3.25f);
+        MKCoordinateRegion adjustRegion = [self.mapView regionThatFits:viewRegion];
+        [self.mapView setRegion:adjustRegion animated:YES];
+    }
+
     NSLog(@"Annotation set");
 }
 
@@ -358,9 +595,15 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     // if annotation is start
     if ([[annotation title] isEqualToString:@"start"] || [[annotation title] isEqualToString:@"end"])
     {
-        annotationView.image = [UIImage imageNamed:@"Button_small.png"];
+        annotationView.image = [UIImage imageNamed:@"Button1.png"];
     }
-         
+    
+    // if annotation is start
+    if ([[annotation title] isEqualToString:@"end"] || [[annotation title] isEqualToString:@"end"])
+    {
+        annotationView.image = [UIImage imageNamed:@"Button2.png"];
+    }
+    
     annotationView.annotation = annotation;
    
     
@@ -443,7 +686,7 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         gesture.view.layer.position = _startPosition;
         
         // TEST FOR RECENTS
-        if (_limitedPanMapFlags.neutral &&((_startPosition.x - currentPosition.x) >= kRECENTS_THRESHOLD)) {
+        if (_limitedPanMapFlags.neutral &&((_startPosition.x - currentPosition.x) >= kRECENTS_THRESHOLD) && self.canShowRecents) {
             
             _recentPosition = CGPointMake(_startPosition.x - kRECENTS_TRANSITION, _startPosition.y);
             
@@ -457,6 +700,8 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
                 self.mapView.alpha = .7f;
                 self.recentView.alpha = 1.0f;
                 [self searchBarPositionHidden:YES];
+                
+                self.favoriteImage.alpha = 0;
                 
                 _limitedPanMapFlags.showingRecents = YES;
                 _limitedPanMapFlags.showingSearch = YES;
@@ -496,6 +741,8 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
                     _limitedPanMapFlags.showingRecents = NO;
                     _limitedPanMapFlags.showingSearch = NO;
                     
+                    self.favoriteImage.alpha = 1.0f;
+                    
                 }];
             }
         }
@@ -510,7 +757,9 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     self.startNode = [[USCPathNode alloc] initWithFrame:CGRectZero withCard:self.resultInformation.card];
     self.startNode.frame = CGRectMake(5.0f, CGRectGetMaxY(self.searchBar.bounds) + 10.0f, CGRectGetMaxX(self.bounds)-10.0f, 30);;
     [self addGestureToNode:self.startNode];
-    [self addSubview:self.startNode];
+    [self.startNode.trash addTarget:self action:@selector(removeStartNodeStart:) forControlEvents:UIControlEventTouchUpInside];
+    
+        [self addSubview:self.startNode];
     
     // set starting coordinate
     self.hasCustomStart = YES;
@@ -531,11 +780,32 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     [self.searchBar setText:@""];
     [self.searchBar setPlaceholder:@"Enter Desintation"];
     [self.searchBar becomeFirstResponder];
+    
+    self.hasStartNode = YES;
+    self.resultsView.hasStartNode = YES;
 }
 
 - (void)_setAsEnd:(id)sender;
 {
+    [self _backButton:sender];
     
+    [self showPolylineForRoute:self.resultInformation.card.route];
+    [self showAnnotationsForRoute:self.resultInformation.card.route withZoom:YES];
+    [self addSubview:self.timeSlider];
+    
+    // name display
+    [self.nameDisplay setText:self.resultInformation.card.route.name];
+    [self.nameDisplay sizeToFit];
+    self.nameDisplay.frame = CGRectIntegral(self.nameDisplay.frame);
+    self.nameDisplay.center = CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMidY(self.nameDisplay.bounds) * 1.25f );
+    [self addSubview:self.nameDisplay];
+    
+    // time display
+    [self.timeDisplay setText:self.resultInformation.card.route.name];
+    [self.timeDisplay sizeToFit];
+    self.timeDisplay.center = CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMaxY(self.nameDisplay.bounds) + CGRectGetMaxY(self.timeDisplay.bounds));
+    self.timeDisplay.frame = CGRectIntegral(self.timeDisplay.frame);
+    [self addSubview:self.timeDisplay];
 }
 
 - (void)_backButton:(id)sender;
@@ -556,10 +826,18 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         self.showingResults = NO;
         self.showingPolyline = NO;
         _limitedPanMapFlags.neutral = YES;
+        self.canShowRecents = YES;
+        self.canShowFavorites = YES;
         [self.backButton removeFromSuperview];
+        [self addSubview:self.helpButton];
+        self.favoriteImage.alpha = 1.0f;
     }
     else if (self.showingPolyline)
     {
+        [UIView animateWithDuration:0.3f animations:^{
+            self.mapView.alpha = 0.5f;
+        }];
+        
         // remove polyline
         [self.polylineView removeFromSuperview];
         
@@ -583,7 +861,16 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         [self addSubview:self.backButton];
         
         // set map to userlocation
-        [self centerMapTo:self.mapView.userLocation.coordinate withTrackingMode:MKUserTrackingModeNone withDuration:0.3f];
+        
+        if (!self.timeChanged)
+        {
+            [self centerMapTo:self.mapView.userLocation.coordinate withTrackingMode:MKUserTrackingModeNone withDuration:0.3f];
+        }
+        
+        // remove superview
+        [self.timeSlider removeFromSuperview];
+        [self.nameDisplay removeFromSuperview];
+        [self.timeDisplay removeFromSuperview];
             
         // set BOOLs
         self.showingResults = YES;
@@ -612,6 +899,12 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
             }
         }
         
+        [UIView animateWithDuration:0.3f animations:^{
+            
+            self.startNode.center = _startNodePosition;
+            
+        }];
+        
         // unhide page control
         self.resultsView.pageControl.hidden = NO;
         self.resultsView.pagesScrollView.userInteractionEnabled = YES;
@@ -619,6 +912,10 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
         // set BOOLs
         self.showingInformtaion = NO;
         self.showingResults = YES;
+        
+        [UIView animateWithDuration:0.3f animations:^{
+            self.mapView.alpha = 0.5f;
+        }];
     }
 }
 
@@ -666,6 +963,16 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
     panGesture.delegate = self;
     
     [node addGestureRecognizer:panGesture];
+}
+
+- (void)removeStartNodeStart:(id)sender;
+{
+    [self.startNode removeFromSuperview];
+
+    // set BOOLs
+    self.hasCustomStart = NO;
+    self.hasStartNode = NO;
+    self.resultsView.hasStartNode = NO;
 }
 
 - (void)handleNodeGesture:(UIPanGestureRecognizer *)gesture;
@@ -731,6 +1038,10 @@ static NSString * const kUSCWobbleAnimationKey = @"kUSCWobbleAnimationKey";
             
             // set BOOLs
             self.hasCustomStart = NO;
+            self.hasStartNode = NO;
+            self.resultsView.hasStartNode = NO;
+            
+            self.searchBar.placeholder = @"Search";
         }
         else
         {

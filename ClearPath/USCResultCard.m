@@ -17,8 +17,6 @@
 
 @property (nonatomic, strong) UIView *contentView;
 
-@property (nonatomic, strong) UIButton *sideButton;
-
 @end
 
 @implementation USCResultCard
@@ -28,9 +26,11 @@
 @synthesize route = _route;
 @synthesize title = _title;
 @synthesize subtitle = _subtitle;
+@synthesize time = _time;
 
 @synthesize contentView = _contentView;
 @synthesize sideButton = _sideButton;
+@synthesize timeString;
 
 - (id)initWithFrame:(CGRect)frame withRoute:(USCRoute *)r delegate:(id<USCResultCardDelegate>)delegate withIndex:(int)index;
 {
@@ -77,13 +77,12 @@
     UIButton *indexButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [indexButton setBackgroundImage:[UIImage imageNamed:@"Button_medium.png"] forState:UIControlStateNormal];
     [indexButton sizeToFit];
-    indexButton.center = CGPointMake(CGRectGetMidX(indexButton.bounds), CGRectGetMidY(self.bounds));
+    indexButton.center = CGPointMake(CGRectGetMidX(indexButton.bounds) * 1.25f, CGRectGetMidY(self.bounds));
     [self addSubview:indexButton];
     [indexButton addTarget:self action:@selector(_willShowInformation) forControlEvents:UIControlEventTouchUpInside];
     
     UILabel *indexNumber = [[UILabel alloc] initWithFrame:CGRectZero];
     indexNumber.backgroundColor = [UIColor clearColor];
-    
     [indexNumber setText:[NSString stringWithFormat:@"%d", _index]];
     indexNumber.textColor = [UIColor whiteColor];
     indexNumber.font = [UIFont fontWithName:@"HelveticaNeue-Bold" size:25];
@@ -92,23 +91,17 @@
     indexNumber.center = CGPointMake(CGRectGetMidX(indexButton.bounds), CGRectGetMidY(indexButton.bounds)-2);
     [indexButton addSubview:indexNumber];
 
-    
-    
-    
-    
-    
-    
     // position title and subtitle
     [self.title setText:self.route.name];
     self.title.textAlignment = UITextAlignmentLeft;
-    self.title.font = [UIFont fontWithName:@"HelveticaNeue-Medium" size:20];
+    self.title.font = [UIFont fontWithName:@"Helvetica-Bold" size:25];
     self.title.textColor = [UIColor colorWithR:51 G:51 B:255 A:1];
     self.title.textColor = [UIColor whiteColor];
     self.title.backgroundColor = [UIColor clearColor];
     [self.title sizeToFit];
-    [self.title setFrame:CGRectMake(CGRectGetMaxX(indexButton.bounds) + 5.0f, indexButton.frame.origin.y,
-                                    CGRectGetMidX(self.bounds), CGRectGetMaxY(self.title.bounds))];
     self.title.frame = CGRectIntegral(self.title.frame);
+    self.title.center = CGPointMake(CGRectGetMaxX(indexButton.bounds) * 1.25f + CGRectGetMidX(self.title.bounds), CGRectGetMidY(self.bounds) - CGRectGetMidY(self.title.bounds));
+    
     
     CGSize maximumLabelSize = CGSizeMake(296, 9999);
     CGSize expectedLabelSize = [self.route.name sizeWithFont:self.title.font constrainedToSize:maximumLabelSize lineBreakMode:self.title.lineBreakMode];
@@ -118,36 +111,33 @@
     [self makeShadowForLabel:self.title];
     [self addSubview:self.title];
     
-    
-    
-    
-    
-    
     // position address
     UILabel *address = [[UILabel alloc] initWithFrame:CGRectZero];
     [address setText:self.route.address];
     address.textAlignment = UITextAlignmentLeft;
-    address.font = [UIFont fontWithName:@"Helvetica-Bold" size:15];
+    address.font = [UIFont fontWithName:@"Helvetica-Bold" size:10];
     address.textColor = [UIColor whiteColor];
     address.backgroundColor = [UIColor clearColor];
     [address sizeToFit];
-    address.frame = CGRectMake(self.title.frame.origin.x + 20.0f, self.title.frame.origin.y+CGRectGetMaxY(self.title.bounds),
-                                                        CGRectGetMaxX(self.title.bounds) - 20, CGRectGetMaxY(address.bounds));
+    address.frame = CGRectMake(self.title.frame.origin.x + 10.0f, self.title.frame.origin.y+CGRectGetMaxY(self.title.bounds),
+                                                        CGRectGetMaxX(address.bounds), CGRectGetMaxY(address.bounds));
 //    [self makeShadowForLabel:address];
-//    [self addSubview:address];
+    [self addSubview:address];
 
+    self.timeString = self.route.travelTime;
+    
     // set time
-    UILabel *time = [[UILabel alloc] initWithFrame:CGRectZero];
-    [time setText:self.route.travelTime];
-    time.textAlignment = UITextAlignmentLeft;
-    time.backgroundColor = [UIColor clearColor];
-    time.textColor = [UIColor colorWithR:51 G:51 B:255 A:1];
-    time.font = [UIFont fontWithName:@"Helvetica-Bold" size:15];
-    [time sizeToFit];
-    time.frame = CGRectMake(self.title.frame.origin.x, self.title.frame.origin.y + CGRectGetMaxY(self.title.bounds),
-                              CGRectGetMaxX(time.bounds), CGRectGetMaxY(time.bounds));
-    time.frame = CGRectIntegral(time.frame);
-    [self addSubview:time];
+    self.time = [[UILabel alloc] initWithFrame:CGRectZero];
+    [self.time setText:self.timeString];
+    self.time.textAlignment = UITextAlignmentLeft;
+    self.time.backgroundColor = [UIColor clearColor];
+    self.time.textColor = [UIColor colorWithR:51 G:51 B:255 A:1];
+    self.time.font = [UIFont fontWithName:@"Helvetica-Bold" size:10];
+    [self.time sizeToFit];
+    self.time.frame = CGRectMake(address.frame.origin.x, self.title.frame.origin.y + CGRectGetMaxY(address.bounds) + 30,
+                              CGRectGetMaxX(self.time.bounds), CGRectGetMaxY(self.time.bounds));
+    self.time.frame = CGRectIntegral(self.time.frame);
+    [self addSubview:self.time];
     
     self.sideButton.center = CGPointMake(CGRectGetMaxX(self.bounds) * 0.95f, CGRectGetMidY(self.bounds));
     [self addSubview:self.sideButton];

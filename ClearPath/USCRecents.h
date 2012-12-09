@@ -10,7 +10,10 @@
 
 @interface USCRecents : UIView
 
-@property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) UILabel *title;
+
+@property (nonatomic, strong) UIButton *gas;
+@property (nonatomic, strong) UIButton *hospital;
+@property (nonatomic, strong) UIButton *food;
 
 @end

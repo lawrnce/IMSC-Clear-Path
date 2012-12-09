@@ -11,6 +11,8 @@
 #import <MapKit/MapKit.h>
 #import "USCRecents.h"
 #import "USCResults.h"
+#import "USCFavorites.h"
+#import "USCTimeSlider.h"
 
 #define METERS_PER_MILE 1609.344
 
@@ -37,7 +39,8 @@
     
     __unsafe_unretained id<USCLimitedPanMapViewDelegate> _delegate;
     
-    CGPoint _startPosition, _mapNeutralPosition ,_mapSearchPosition, _recentPosition, _searchBarPosition, _nodePosition;
+    CGPoint _startPosition, _mapNeutralPosition ,_mapSearchPosition, _recentPosition, _searchBarPosition, _nodePosition, _favoritePosition;
+    CGPoint _startNodePosition;
     
     struct
     {
@@ -61,15 +64,19 @@
 @property (nonatomic, strong) UIPanGestureRecognizer *panGestureRecognizer;
 @property (nonatomic, strong, readonly) UILongPressGestureRecognizer *touchDownGestureRecognizer;
 @property (nonatomic, strong) USCRecents *recentView;
+@property (nonatomic, strong) USCFavorites *favoritesView;
 @property (nonatomic, strong) USCResults *resultsView;
 @property (nonatomic, strong) UITextField *searchBar;
 @property (nonatomic) CLLocationCoordinate2D startCoordinate;
 @property (nonatomic) CLLocationCoordinate2D endCoordinate;
 @property (nonatomic) BOOL hasCustomStart;
+@property (nonatomic, strong) USCTimeSlider *timeSlider;
 
 - (void)enableFullTouch:(BOOL)flag forMap:(MKMapView *)mapView;
 - (void)searchShowing:(BOOL)flag;
 - (void)showSearchResultsForPoints:(NSArray *)placemarks;
 - (void)viewDidLoad;
+- (void)showRoute:(USCRoute *)route;
+- (void)closeFavorites;
 
 @end
